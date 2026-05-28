@@ -1,0 +1,20 @@
+{
+  "name": "anythingllm",
+  "version": "1.7.7",
+  "description": "All-in-one AI app for document chat, agents, and more",
+  "upstream": "https://github.com/Mintplex-Labs/anything-llm",
+  "license": "MIT",
+  "runtime": "node",
+  "base_image": "node:22-alpine",
+  "port": 3001,
+  "volumes": {
+    "storage": "/app/server/storage"
+  },
+  "env": {
+    "STORAGE_DIR": "/app/server/storage",
+    "NODE_ENV": "production"
+  },
+  "health_check": "/api/health",
+  "docker_image": "mintplexlabs/anythingllm",
+  "tags": ["ai", "llm", "rag", "chatbot"]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "excalidraw",
+  "version": "0.18.0",
+  "description": "Virtual whiteboard for sketching hand-drawn like diagrams",
+  "upstream": "https://github.com/excalidraw/excalidraw",
+  "license": "MIT",
+  "type": "static",
+  "base_image": "nginx:alpine",
+  "static_dir": "/usr/share/nginx/html",
+  "port": 80,
+  "health_check": "/",
+  "build": {
+    "repo": "https://github.com/excalidraw/excalidraw.git",
+    "install": "yarn install",
+    "build": "yarn build:app",
+    "output": "excalidraw-app/build"
+  },
+  "docker_image": "excalidraw/excalidraw",
+  "tags": ["whiteboard", "drawing", "collaboration"]
+}

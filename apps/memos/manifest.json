@@ -1,0 +1,15 @@
+{
+  "name": "memos",
+  "version": "0.24.3",
+  "description": "Lightweight self-hosted memo hub",
+  "upstream": "https://github.com/usememos/memos",
+  "license": "MIT",
+  "runtime": "binary",
+  "port": 5230,
+  "volumes": {
+    "data": "/var/opt/memos"
+  },
+  "health_check": "/",
+  "docker_image": "neosmemo/memos",
+  "tags": ["notes", "memo", "knowledge-base"]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "plausible",
+  "version": "2.2.1",
+  "description": "Privacy-friendly Google Analytics alternative",
+  "upstream": "https://github.com/plausible/analytics",
+  "license": "AGPL-3.0",
+  "runtime": "elixir",
+  "port": 8000,
+  "volumes": {
+    "data": "/var/lib/plausible"
+  },
+  "env": {
+    "BASE_URL": "http://localhost:8000",
+    "SECRET_KEY_BASE": "${RANDOM_64}",
+    "TOTP_VAULT_KEY": "${RANDOM_32}"
+  },
+  "services": {
+    "postgres": {
+      "image": "postgres:16-alpine",
+      "env": { "POSTGRES_DB": "plausible", "POSTGRES_USER": "plausible", "POSTGRES_PASSWORD": "plausible" }
+    },
+    "clickhouse": {
+      "image": "clickhouse/clickhouse-server:24-alpine"
+    }
+  },
+  "health_check": "/api/health",
+  "docker_image": "ghcr.io/plausible/community-edition",
+  "tags": ["analytics", "privacy", "google-analytics-alternative"]
+}

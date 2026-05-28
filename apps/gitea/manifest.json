@@ -1,0 +1,19 @@
+{
+  "name": "gitea",
+  "version": "1.23.7",
+  "description": "Self-hosted Git service",
+  "upstream": "https://github.com/go-gitea/gitea",
+  "license": "MIT",
+  "runtime": "binary",
+  "port": 3000,
+  "volumes": {
+    "data": "/data",
+    "config": "/etc/gitea"
+  },
+  "env": {
+    "GITEA__security__INSTALL_LOCK": "true"
+  },
+  "health_check": "/",
+  "docker_image": "gitea/gitea",
+  "tags": ["git", "code-hosting", "devtools"]
+}

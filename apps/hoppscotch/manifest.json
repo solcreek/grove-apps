@@ -1,0 +1,14 @@
+{
+  "name": "hoppscotch",
+  "version": "2025.1.0",
+  "description": "Open source API development ecosystem",
+  "upstream": "https://github.com/hoppscotch/hoppscotch",
+  "license": "MIT",
+  "type": "static",
+  "base_image": "nginx:alpine",
+  "static_dir": "/usr/share/nginx/html",
+  "port": 80,
+  "health_check": "/",
+  "docker_image": "hoppscotch/hoppscotch",
+  "tags": ["api-testing", "postman-alternative", "devtools"]
+}

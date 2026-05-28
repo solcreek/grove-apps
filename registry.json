@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "apps": [
+    "uptime-kuma",
+    "excalidraw",
+    "vaultwarden",
+    "gitea",
+    "memos",
+    "pocketbase",
+    "ghost",
+    "hoppscotch",
+    "plausible",
+    "anythingllm"
+  ]
+}

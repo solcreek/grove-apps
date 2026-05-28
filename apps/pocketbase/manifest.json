@@ -1,0 +1,18 @@
+{
+  "name": "pocketbase",
+  "version": "0.25.9",
+  "description": "Open source backend with realtime database, auth, and file storage",
+  "upstream": "https://github.com/pocketbase/pocketbase",
+  "license": "MIT",
+  "runtime": "binary",
+  "port": 8090,
+  "volumes": {
+    "data": "/pb/pb_data"
+  },
+  "health_check": "/api/health",
+  "build": {
+    "download": "https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_linux_amd64.zip",
+    "entry": "./pocketbase serve --http=0.0.0.0:8090"
+  },
+  "tags": ["backend", "database", "baas", "firebase-alternative"]
+}
