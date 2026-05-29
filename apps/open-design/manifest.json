@@ -1,0 +1,16 @@
+{
+  "name": "open-design",
+  "version": "0.5.0",
+  "description": "AI-driven design tool — prototypes, decks, dashboards",
+  "upstream": "https://github.com/nexu-io/open-design",
+  "license": "MIT",
+  "runtime": "node",
+  "base_image": "node:24-alpine",
+  "port": 7456,
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "health_check": "/",
+  "docker_image": "vanjayak/open-design:latest",
+  "tags": ["design", "ai", "prototyping", "ui"]
+}
