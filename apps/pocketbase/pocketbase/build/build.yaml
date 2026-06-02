@@ -1,0 +1,29 @@
+# Per-app build config consumed by .github/workflows/build-images.yml.
+# Each app under apps/{owner}/{name}/build/ may have this file alongside
+# its Dockerfile. The workflow reads it to know what tag to push, which
+# platforms to build for, and which build args to thread through.
+#
+# schema_version: pin to detect breaking changes in build.yaml shape
+#                 independently of the manifest schema_version.
+
+schema_version: "0.1"
+
+# Slug must match the parent manifest's slug.
+slug: pocketbase/pocketbase
+
+# Image base name. The full pushed image is:
+#   ghcr.io/solcreek/grove-apps/<image_name>:<version>
+# Keeping image_name short avoids ghcr.io/solcreek/grove-apps/pocketbase/pocketbase.
+image_name: pocketbase
+version: "0.39.0"
+
+platforms:
+  - linux/amd64
+  - linux/arm64
+
+# Threaded into `docker buildx build --build-arg`.
+build_args:
+  PB_VERSION: "0.39.0"
+
+context: .
+dockerfile: Dockerfile
