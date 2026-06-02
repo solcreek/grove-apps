@@ -7,6 +7,9 @@
     "pocketbase",
     "ghost",
     "plausible",
-    "uptime-kuma"
+    "uptime-kuma",
+    "nextcloud",
+    "photoprism",
+    "linkding"
   ]
 }

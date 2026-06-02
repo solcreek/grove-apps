@@ -41,6 +41,9 @@ the `.dmg`), stateless web tools (just use the web version).
 | [Ghost](apps/ghost/) | Professional publishing platform | image | productivity |
 | [Plausible](apps/plausible/) | Privacy-friendly analytics | image | analytics |
 | [Uptime Kuma](apps/uptime-kuma/) | Self-hosted uptime monitor | source | monitoring |
+| [Nextcloud](apps/nextcloud/) | Self-hosted productivity (files / cal / contacts) | image | productivity |
+| [PhotoPrism](apps/photoprism/) | AI photo manager — your own Google Photos | image | media |
+| [Linkding](apps/linkding/) | Lightweight bookmark manager | image | knowledge |
 
 ## Manifest layout
 
