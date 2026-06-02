@@ -2,15 +2,11 @@
   "schema_version": "0.1",
   "apps": [
     "vaultwarden",
-    "uptime-kuma",
+    "memos",
+    "gitea",
     "pocketbase",
     "ghost",
-    "gitea",
-    "memos",
-    "excalidraw",
-    "hoppscotch",
-    "anythingllm",
-    "open-design",
-    "plausible"
+    "plausible",
+    "uptime-kuma"
   ]
 }
