@@ -136,7 +136,10 @@ jobs:
   # back to ubuntu-latest because manifest composition is
   # cross-platform (just registry API calls).
   merge:
-    needs: build
+    # GH Actions only lets a job read `needs.X.outputs` for X that's
+    # in its own `needs:` list — merge depends on discover both for
+    # data flow (the slug matrix) AND for build readiness.
+    needs: [discover, build]
     if: needs.discover.outputs.apps != '[]'
     runs-on: ubuntu-latest
     strategy:
