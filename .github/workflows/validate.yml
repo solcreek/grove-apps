@@ -75,7 +75,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Read manifest
+      - name: Read manifest + assemble env flags
         id: cfg
         run: |
           set -euo pipefail
@@ -83,10 +83,19 @@ jobs:
           image=$(jq -r .image "$mf")
           port=$(jq -r '.ports[0].container' "$mf")
           health=$(jq -r '.health_check // "/"' "$mf")
+          # Manifest env vars must be passed — many apps (vaultwarden,
+          # ghost, plausible) refuse to start without their declared
+          # config. Flatten to a string of "-e K=V" args for docker run.
+          env_flags=$(jq -r '.env // {} | to_entries | map("-e \(.key)=\(.value|@sh)") | join(" ")' "$mf")
+          # Secrets get random placeholder values — we're testing
+          # "does the container start", not validating actual auth.
+          secret_flags=$(jq -r '.secrets // [] | map("-e \(.name)=ci-smoke-" + (.name|ascii_downcase)) | join(" ")' "$mf")
           {
             echo "image=$image"
             echo "port=$port"
             echo "health=$health"
+            echo "env_flags=$env_flags"
+            echo "secret_flags=$secret_flags"
           } >> "$GITHUB_OUTPUT"
 
       - name: docker pull
@@ -98,33 +107,39 @@ jobs:
         # invocation in the dew VM. Health check accepts any 2xx or
         # 3xx; many apps redirect / to a setup wizard which is fine.
         # Boot timeout 90s — covers heavy apps (nextcloud, plausible).
-        # Image-specific env vars from the manifest are intentionally
-        # NOT passed: the goal here is "does this container start at
-        # all and listen on its declared port?", not "does the full
-        # secret-injected install flow work" (that's grove install
-        # + dew VM territory).
+        # NO --rm: we want the dead container around so the logs
+        # step below can surface the real startup failure.
         run: |
           set -euo pipefail
           NAME="probe-${{ matrix.slug }}"
           NAME=${NAME//\//-}
-          docker run -d --rm --name "$NAME" --network host "${{ steps.cfg.outputs.image }}"
-          trap "docker rm -f $NAME 2>/dev/null || true" EXIT
+          eval docker run -d --name "$NAME" --network host \
+            ${{ steps.cfg.outputs.env_flags }} \
+            ${{ steps.cfg.outputs.secret_flags }} \
+            "${{ steps.cfg.outputs.image }}"
 
-          # Wait up to 90s for the declared port to listen.
+          # Wait up to 90s for the declared port to respond.
           for i in $(seq 1 45); do
-            if curl -fsS -o /dev/null -m 2 "http://127.0.0.1:${{ steps.cfg.outputs.port }}${{ steps.cfg.outputs.health }}" 2>/dev/null; then
-              echo "✓ ${{ matrix.slug }} healthy on :${{ steps.cfg.outputs.port }}${{ steps.cfg.outputs.health }}"
-              exit 0
-            fi
-            # 3xx redirect is acceptable — many apps redirect / to /setup.
             code=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:${{ steps.cfg.outputs.port }}${{ steps.cfg.outputs.health }}" 2>/dev/null || echo "000")
             case "$code" in
-              2*|3*) echo "✓ ${{ matrix.slug }} responded $code"; exit 0 ;;
+              2*|3*)
+                echo "✓ ${{ matrix.slug }} responded $code on :${{ steps.cfg.outputs.port }}${{ steps.cfg.outputs.health }}"
+                exit 0
+                ;;
             esac
             sleep 2
           done
 
           echo "::error::${{ matrix.slug }} did not become healthy within 90s"
+          echo "── container state ──"
+          docker inspect "$NAME" --format '{{.State.Status}} (exit {{.State.ExitCode}}): {{.State.Error}}' 2>&1 || true
           echo "── container logs ──"
-          docker logs "$NAME" 2>&1 | tail -50 || true
+          docker logs "$NAME" 2>&1 | tail -80 || true
           exit 1
+
+      - name: Cleanup container
+        if: always()
+        run: |
+          NAME="probe-${{ matrix.slug }}"
+          NAME=${NAME//\//-}
+          docker rm -f "$NAME" 2>/dev/null || true
