@@ -20,11 +20,11 @@
     "ref": "open-design-v0.9.0",
     "runtime": "node",
     "build_command": "see apps/nexu-io/open-design/build/Dockerfile",
-    "built_at": "",
-    "built_digest": ""
+    "built_at": "2026-06-02T15:58:00Z",
+    "built_digest": "sha256:66d92b226274908a767d67516a141722786f1ab2b325a68498e9df9be5e4a0c0"
   },
   "image": "ghcr.io/solcreek/grove-apps/nexu-io/open-design:0.9.0",
-  "image_digest": "",
+  "image_digest": "sha256:66d92b226274908a767d67516a141722786f1ab2b325a68498e9df9be5e4a0c0",
   "arch": [
     "amd64",
     "arm64"
