@@ -59,6 +59,26 @@ type Manifest struct {
 	Ports         []Port         `json:"ports"`
 	Source        map[string]any `json:"source"`
 	Display       map[string]any `json:"display"`
+	SmokeTest     *SmokeTest     `json:"smoke_test,omitempty"`
+}
+
+// SmokeTest carries hints that apply ONLY during Layer 3 smoke
+// validation in CI — not to grove install. Used by apps with
+// boot-time safety checks the smoke environment can't naturally
+// satisfy.
+//
+//   ExtraEnv  Additional env vars injected before docker run.
+//             E.g. vaultwarden's "I_REALLY_WANT_VOLATILE_STORAGE=true"
+//             — grove install satisfies the persistent-volume guard
+//             by actually mounting a volume, smoke can't.
+//
+//   Skip      Set true for apps the smoke harness fundamentally
+//             cannot handle (e.g. multi-container compose, needs
+//             an external DB). The validator surfaces "skipped"
+//             so a long-disabled app stays visible.
+type SmokeTest struct {
+	ExtraEnv map[string]string `json:"extra_env,omitempty"`
+	Skip     bool              `json:"skip,omitempty"`
 }
 
 type Port struct {

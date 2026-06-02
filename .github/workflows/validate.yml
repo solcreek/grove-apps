@@ -87,14 +87,30 @@ jobs:
           # ghost, plausible) refuse to start without their declared
           # config. Flatten to a string of "-e K=V" args for docker run.
           env_flags=$(jq -r '.env // {} | to_entries | map("-e \(.key)=\(.value|@sh)") | join(" ")' "$mf")
-          # Secrets get random placeholder values — we're testing
-          # "does the container start", not validating actual auth.
-          secret_flags=$(jq -r '.secrets // [] | map("-e \(.name)=ci-smoke-" + (.name|ascii_downcase)) | join(" ")' "$mf")
+          # smoke_test.extra_env are env vars applied ONLY during this
+          # automated smoke run (not during grove install). Used by
+          # apps with boot-time safety checks that grove's real install
+          # satisfies via mounted volumes / managed state — e.g.
+          # vaultwarden's "no persistent volume" guard.
+          smoke_env=$(jq -r '.smoke_test.extra_env // {} | to_entries | map("-e \(.key)=\(.value|@sh)") | join(" ")' "$mf")
+          # Secrets get random placeholders — base64 of 32 bytes (44
+          # chars) because that satisfies the two common shapes apps
+          # check: minimum-length string (Plausible SECRET_KEY_BASE)
+          # AND Base64-encoded N bytes (Plausible TOTP_VAULT_KEY).
+          # Hex used to suffice but tripped the latter; base64 covers
+          # both with one format.
+          secret_flags=""
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            val=$(openssl rand -base64 32)
+            secret_flags="$secret_flags -e ${name}=${val}"
+          done < <(jq -r '.secrets // [] | .[].name' "$mf")
           {
             echo "image=$image"
             echo "port=$port"
             echo "health=$health"
             echo "env_flags=$env_flags"
+            echo "smoke_env=$smoke_env"
             echo "secret_flags=$secret_flags"
           } >> "$GITHUB_OUTPUT"
 
@@ -115,6 +131,7 @@ jobs:
           NAME=${NAME//\//-}
           eval docker run -d --name "$NAME" --network host \
             ${{ steps.cfg.outputs.env_flags }} \
+            ${{ steps.cfg.outputs.smoke_env }} \
             ${{ steps.cfg.outputs.secret_flags }} \
             "${{ steps.cfg.outputs.image }}"
 

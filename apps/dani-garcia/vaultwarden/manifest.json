@@ -52,5 +52,10 @@
   },
   "setup": {
     "url_path": "/admin"
+  },
+  "smoke_test": {
+    "extra_env": {
+      "I_REALLY_WANT_VOLATILE_STORAGE": "true"
+    }
   }
 }

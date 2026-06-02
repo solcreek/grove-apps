@@ -40,14 +40,15 @@
   "env": {
     "NODE_ENV": "production",
     "database__client": "sqlite3",
-    "url": "http://localhost:2368"
+    "url": "http://localhost:2368",
+    "database__connection__filename": "/var/lib/ghost/content/data/ghost.db"
   },
   "health_check": "/ghost/api/admin/site/",
   "update_policy": "manual",
   "display": {
     "icon": "icons/ghost.svg",
     "category": "productivity",
-    "long_description": "Ghost is a publishing platform for modern journalism \u2014 fast, SEO-optimised, and built for serious writers, newsletters, and membership sites."
+    "long_description": "Ghost is a publishing platform for modern journalism — fast, SEO-optimised, and built for serious writers, newsletters, and membership sites."
   },
   "requirements": {
     "min_ram_mb": 512
