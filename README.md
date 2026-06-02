@@ -1,5 +1,7 @@
 # grove-apps
 
+[![validate](https://github.com/solcreek/grove-apps/actions/workflows/validate.yml/badge.svg)](https://github.com/solcreek/grove-apps/actions/workflows/validate.yml) [![build-images](https://github.com/solcreek/grove-apps/actions/workflows/build-images.yml/badge.svg)](https://github.com/solcreek/grove-apps/actions/workflows/build-images.yml)
+
 The OSS app catalog for **Grove** — a launcher for developers and builders
 who want to **try open-source apps locally and share them publicly** with
 a customer or colleague.

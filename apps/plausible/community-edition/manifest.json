@@ -3,7 +3,7 @@
   "slug": "plausible/community-edition",
   "name": "Plausible Analytics",
   "kind": "image",
-  "version": "2.2.1",
+  "version": "3.2.1",
   "description": "Privacy-friendly Google Analytics alternative",
   "upstream": "https://github.com/plausible/analytics",
   "license": "AGPL-3.0",
@@ -14,10 +14,10 @@
   ],
   "source": {
     "type": "upstream",
-    "image": "ghcr.io/plausible/community-edition:v2.2.1",
+    "image": "ghcr.io/plausible/community-edition:v3.2.1",
     "maintainer": "official"
   },
-  "image": "ghcr.io/plausible/community-edition:v2.2.1",
+  "image": "ghcr.io/plausible/community-edition:v3.2.1",
   "image_digest": "",
   "arch": [
     "amd64",
@@ -84,7 +84,7 @@
   "display": {
     "icon": "icons/plausible.svg",
     "category": "analytics",
-    "long_description": "Plausible is a privacy-friendly analytics tool \u2014 no cookies, GDPR / CCPA / PECR compliant out of the box. Lightweight script, simple dashboard."
+    "long_description": "Plausible is a privacy-friendly analytics tool — no cookies, GDPR / CCPA / PECR compliant out of the box. Lightweight script, simple dashboard."
   },
   "requirements": {
     "min_ram_mb": 1024

@@ -1,0 +1,130 @@
+# Catalog QA — three layers run in parallel on every PR:
+#
+#   layer-1-2  Go validator: schema, slug/path consistency,
+#              registry cross-refs, image availability via HEAD.
+#              Catches typos + dead tags. Fast (seconds).
+#
+#   layer-3    Container smoke test: actually `docker run` each
+#              app, wait for its port to listen, probe the
+#              health_check path, expect 2xx or 3xx. Catches "the
+#              container exits immediately" / "wrong port declared"
+#              / "permission denied on data volume" — the bug class
+#              we hit with gitea. ~1 min wall clock for the catalog
+#              in matrix-parallel form.
+#
+# Run on every PR + push to main.
+
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  # ── Layer 1 + 2 — structure + image availability ──────────────
+  layer-1-2:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.list.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: Validate (schema + image availability)
+        run: go run ./cmd/validate
+
+      - name: Unit tests
+        run: go test ./cmd/validate/... -count=1
+
+      # Emit a JSON list of slugs for the smoke matrix to fan out
+      # over. Use the validator's view (parses registry.json) rather
+      # than listing apps/ directly so disabled apps never get smoked.
+      - id: list
+        name: List apps for smoke matrix
+        run: |
+          set -euo pipefail
+          apps=$(jq -c '.apps' registry.json)
+          echo "apps=$apps" >> "$GITHUB_OUTPUT"
+          echo "Will smoke: $apps"
+
+  # ── Layer 3 — container smoke for every app in the registry ──
+  layer-3:
+    needs: layer-1-2
+    if: needs.layer-1-2.outputs.apps != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        slug: ${{ fromJSON(needs.layer-1-2.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Read manifest
+        id: cfg
+        run: |
+          set -euo pipefail
+          mf="apps/${{ matrix.slug }}/manifest.json"
+          image=$(jq -r .image "$mf")
+          port=$(jq -r '.ports[0].container' "$mf")
+          health=$(jq -r '.health_check // "/"' "$mf")
+          {
+            echo "image=$image"
+            echo "port=$port"
+            echo "health=$health"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: docker pull
+        run: docker pull "${{ steps.cfg.outputs.image }}"
+
+      - name: Run container + probe
+        # --network host so the container's port appears directly on
+        # the runner's loopback — same shape as grove's --net=host
+        # invocation in the dew VM. Health check accepts any 2xx or
+        # 3xx; many apps redirect / to a setup wizard which is fine.
+        # Boot timeout 90s — covers heavy apps (nextcloud, plausible).
+        # Image-specific env vars from the manifest are intentionally
+        # NOT passed: the goal here is "does this container start at
+        # all and listen on its declared port?", not "does the full
+        # secret-injected install flow work" (that's grove install
+        # + dew VM territory).
+        run: |
+          set -euo pipefail
+          NAME="probe-${{ matrix.slug }}"
+          NAME=${NAME//\//-}
+          docker run -d --rm --name "$NAME" --network host "${{ steps.cfg.outputs.image }}"
+          trap "docker rm -f $NAME 2>/dev/null || true" EXIT
+
+          # Wait up to 90s for the declared port to listen.
+          for i in $(seq 1 45); do
+            if curl -fsS -o /dev/null -m 2 "http://127.0.0.1:${{ steps.cfg.outputs.port }}${{ steps.cfg.outputs.health }}" 2>/dev/null; then
+              echo "✓ ${{ matrix.slug }} healthy on :${{ steps.cfg.outputs.port }}${{ steps.cfg.outputs.health }}"
+              exit 0
+            fi
+            # 3xx redirect is acceptable — many apps redirect / to /setup.
+            code=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:${{ steps.cfg.outputs.port }}${{ steps.cfg.outputs.health }}" 2>/dev/null || echo "000")
+            case "$code" in
+              2*|3*) echo "✓ ${{ matrix.slug }} responded $code"; exit 0 ;;
+            esac
+            sleep 2
+          done
+
+          echo "::error::${{ matrix.slug }} did not become healthy within 90s"
+          echo "── container logs ──"
+          docker logs "$NAME" 2>&1 | tail -50 || true
+          exit 1

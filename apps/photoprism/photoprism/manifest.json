@@ -3,8 +3,8 @@
   "slug": "photoprism/photoprism",
   "name": "PhotoPrism",
   "kind": "image",
-  "version": "240711",
-  "description": "AI-powered photo management \u2014 find faces, places, objects in your library",
+  "version": "260601",
+  "description": "AI-powered photo management — find faces, places, objects in your library",
   "upstream": "https://github.com/photoprism/photoprism",
   "license": "AGPL-3.0",
   "tags": [
@@ -15,10 +15,10 @@
   ],
   "source": {
     "type": "upstream",
-    "image": "photoprism/photoprism:240711-jammy",
+    "image": "photoprism/photoprism:260601",
     "maintainer": "official"
   },
-  "image": "photoprism/photoprism:240711-jammy",
+  "image": "photoprism/photoprism:260601",
   "image_digest": "",
   "arch": [
     "amd64",
@@ -59,7 +59,7 @@
   "display": {
     "icon": "icons/photoprism.svg",
     "category": "media",
-    "long_description": "PhotoPrism is an AI-powered app for browsing, organizing, and sharing your photo collection \u2014 face recognition, location maps, automatic tags. Open-source replacement for Google Photos / Apple Photos cloud sync. SQLite backend for the demo path; MariaDB recommended for libraries past ~10k photos."
+    "long_description": "PhotoPrism is an AI-powered app for browsing, organizing, and sharing your photo collection — face recognition, location maps, automatic tags. Open-source replacement for Google Photos / Apple Photos cloud sync. SQLite backend for the demo path; MariaDB recommended for libraries past ~10k photos."
   },
   "requirements": {
     "min_ram_mb": 1024
