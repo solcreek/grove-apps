@@ -14,13 +14,17 @@
     "firebase-alternative"
   ],
   "source": {
-    "type": "upstream",
-    "image": "ghcr.io/muchobien/pocketbase:0.39.0",
-    "maintainer": "community",
-    "maintainer_repo": "https://github.com/muchobien/pocketbase-docker"
+    "type": "build",
+    "image": "ghcr.io/solcreek/grove-apps/pocketbase:0.39.0",
+    "repo": "https://github.com/pocketbase/pocketbase",
+    "ref": "v0.39.0",
+    "runtime": "static",
+    "build_command": "see apps/pocketbase/pocketbase/build/Dockerfile",
+    "built_at": "2026-06-02T14:11:00Z",
+    "built_digest": "sha256:33a29c0eaab02369726c6b4e327b781021d595c648781fec56abb482e316bf77"
   },
-  "image": "ghcr.io/muchobien/pocketbase:0.39.0",
-  "image_digest": "",
+  "image": "ghcr.io/solcreek/grove-apps/pocketbase:0.39.0",
+  "image_digest": "sha256:33a29c0eaab02369726c6b4e327b781021d595c648781fec56abb482e316bf77",
   "arch": [
     "amd64",
     "arm64"
@@ -35,7 +39,7 @@
   "volumes": [
     {
       "name": "data",
-      "path": "/pb_data",
+      "path": "/pb",
       "persistent": true
     }
   ],
