@@ -2,8 +2,8 @@
   "schema_version": "0.1",
   "slug": "uptime-kuma",
   "name": "Uptime Kuma",
-  "kind": "source",
-  "version": "2.14.0",
+  "kind": "image",
+  "version": "2.4.0",
   "description": "Self-hosted uptime / availability monitor",
   "upstream": "https://github.com/louislam/uptime-kuma",
   "license": "MIT",
@@ -12,14 +12,8 @@
     "uptime",
     "status-page"
   ],
-  "build": {
-    "repo": "https://github.com/louislam/uptime-kuma.git",
-    "ref": "2.14.0",
-    "ref_digest": "",
-    "base_image": "node:22-alpine",
-    "install": "npm ci --production && npm run download-dist",
-    "entry": "server/server.js"
-  },
+  "image": "louislam/uptime-kuma:2.4.0",
+  "image_digest": "",
   "arch": [
     "amd64",
     "arm64"

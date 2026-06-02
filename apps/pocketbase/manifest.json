@@ -2,8 +2,8 @@
   "schema_version": "0.1",
   "slug": "pocketbase",
   "name": "PocketBase",
-  "kind": "source",
-  "version": "0.25.9",
+  "kind": "image",
+  "version": "0.39.0",
   "description": "Open source backend with realtime database, auth, and file storage",
   "upstream": "https://github.com/pocketbase/pocketbase",
   "license": "MIT",
@@ -13,13 +13,8 @@
     "baas",
     "firebase-alternative"
   ],
-  "build": {
-    "kind": "binary-download",
-    "url": "https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_linux_${ARCH}.zip",
-    "ref": "v0.25.9",
-    "ref_digest": "",
-    "entry": "./pocketbase serve --http=0.0.0.0:8090"
-  },
+  "image": "ghcr.io/muchobien/pocketbase:0.39.0",
+  "image_digest": "",
   "arch": [
     "amd64",
     "arm64"
@@ -34,7 +29,7 @@
   "volumes": [
     {
       "name": "data",
-      "path": "/pb/pb_data",
+      "path": "/pb_data",
       "persistent": true
     }
   ],
