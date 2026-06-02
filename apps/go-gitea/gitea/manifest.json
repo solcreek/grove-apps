@@ -48,7 +48,9 @@
     }
   ],
   "env": {
-    "GITEA__security__INSTALL_LOCK": "true"
+    "GITEA__security__INSTALL_LOCK": "true",
+    "USER_UID": "0",
+    "USER_GID": "0"
   },
   "health_check": "/",
   "update_policy": "manual",
