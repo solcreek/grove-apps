@@ -1,16 +1,42 @@
 {
-  "name": "open-design",
+  "schema_version": "0.1",
+  "slug": "open-design",
+  "name": "Open Design",
+  "kind": "image",
   "version": "0.5.0",
-  "description": "AI-driven design tool — prototypes, decks, dashboards",
+  "description": "AI-driven design tool \u2014 prototypes, decks, dashboards",
   "upstream": "https://github.com/nexu-io/open-design",
   "license": "MIT",
-  "runtime": "node",
-  "base_image": "node:24-alpine",
-  "port": 7456,
+  "tags": [
+    "design",
+    "ai",
+    "prototyping",
+    "ui"
+  ],
+  "image": "vanjayak/open-design:0.5.0",
+  "image_digest": "",
+  "arch": [
+    "amd64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 7456,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [],
   "env": {
     "NODE_ENV": "production"
   },
   "health_check": "/",
-  "docker_image": "vanjayak/open-design:latest",
-  "tags": ["design", "ai", "prototyping", "ui"]
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/open-design.svg",
+    "category": "productivity",
+    "long_description": "An AI-driven design tool for rapidly sketching prototypes, slide decks, and dashboards."
+  },
+  "requirements": {
+    "min_ram_mb": 256
+  }
 }

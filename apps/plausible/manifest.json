@@ -1,29 +1,90 @@
 {
-  "name": "plausible",
+  "schema_version": "0.1",
+  "slug": "plausible",
+  "name": "Plausible Analytics",
+  "kind": "image",
   "version": "2.2.1",
   "description": "Privacy-friendly Google Analytics alternative",
   "upstream": "https://github.com/plausible/analytics",
   "license": "AGPL-3.0",
-  "runtime": "elixir",
-  "port": 8000,
-  "volumes": {
-    "data": "/var/lib/plausible"
-  },
-  "env": {
-    "BASE_URL": "http://localhost:8000",
-    "SECRET_KEY_BASE": "${RANDOM_64}",
-    "TOTP_VAULT_KEY": "${RANDOM_32}"
-  },
-  "services": {
-    "postgres": {
-      "image": "postgres:16-alpine",
-      "env": { "POSTGRES_DB": "plausible", "POSTGRES_USER": "plausible", "POSTGRES_PASSWORD": "plausible" }
-    },
-    "clickhouse": {
-      "image": "clickhouse/clickhouse-server:24-alpine"
+  "tags": [
+    "analytics",
+    "privacy",
+    "google-analytics-alternative"
+  ],
+  "image": "ghcr.io/plausible/community-edition:v2.2.1",
+  "image_digest": "",
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 8000,
+      "protocol": "tcp"
     }
+  ],
+  "volumes": [
+    {
+      "name": "data",
+      "path": "/var/lib/plausible",
+      "persistent": true
+    }
+  ],
+  "env": {
+    "BASE_URL": "http://localhost:8000"
   },
+  "secrets": [
+    {
+      "name": "SECRET_KEY_BASE",
+      "generate": "random:64"
+    },
+    {
+      "name": "TOTP_VAULT_KEY",
+      "generate": "random:32"
+    }
+  ],
+  "services": [
+    {
+      "name": "postgres",
+      "image": "postgres:16-alpine",
+      "env": {
+        "POSTGRES_DB": "plausible",
+        "POSTGRES_USER": "plausible",
+        "POSTGRES_PASSWORD_FROM_SECRET": "POSTGRES_PASSWORD"
+      },
+      "volumes": [
+        {
+          "name": "pg_data",
+          "path": "/var/lib/postgresql/data",
+          "persistent": true
+        }
+      ]
+    },
+    {
+      "name": "clickhouse",
+      "image": "clickhouse/clickhouse-server:24-alpine",
+      "volumes": [
+        {
+          "name": "ch_data",
+          "path": "/var/lib/clickhouse",
+          "persistent": true
+        }
+      ]
+    }
+  ],
   "health_check": "/api/health",
-  "docker_image": "ghcr.io/plausible/community-edition",
-  "tags": ["analytics", "privacy", "google-analytics-alternative"]
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/plausible.svg",
+    "category": "analytics",
+    "long_description": "Plausible is a privacy-friendly analytics tool \u2014 no cookies, GDPR / CCPA / PECR compliant out of the box. Lightweight script, simple dashboard."
+  },
+  "requirements": {
+    "min_ram_mb": 1024
+  },
+  "setup": {
+    "url_path": "/register"
+  }
 }

@@ -1,16 +1,16 @@
 {
-  "version": 1,
+  "schema_version": "0.1",
   "apps": [
-    "uptime-kuma",
-    "excalidraw",
     "vaultwarden",
-    "gitea",
-    "memos",
+    "uptime-kuma",
     "pocketbase",
     "ghost",
+    "gitea",
+    "memos",
+    "excalidraw",
     "hoppscotch",
-    "plausible",
     "anythingllm",
-    "open-design"
+    "open-design",
+    "plausible"
   ]
 }

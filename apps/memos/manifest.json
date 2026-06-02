@@ -1,15 +1,45 @@
 {
-  "name": "memos",
+  "schema_version": "0.1",
+  "slug": "memos",
+  "name": "Memos",
+  "kind": "image",
   "version": "0.24.3",
   "description": "Lightweight self-hosted memo hub",
   "upstream": "https://github.com/usememos/memos",
   "license": "MIT",
-  "runtime": "binary",
-  "port": 5230,
-  "volumes": {
-    "data": "/var/opt/memos"
-  },
+  "tags": [
+    "notes",
+    "memo",
+    "knowledge-base"
+  ],
+  "image": "neosmemo/memos:0.24.3",
+  "image_digest": "",
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 5230,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "data",
+      "path": "/var/opt/memos",
+      "persistent": true
+    }
+  ],
   "health_check": "/",
-  "docker_image": "neosmemo/memos",
-  "tags": ["notes", "memo", "knowledge-base"]
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/memos.svg",
+    "category": "knowledge",
+    "long_description": "Memos is a privacy-first, open-source note-taking service. Markdown-native, lightweight, and well-suited to personal knowledge capture."
+  },
+  "requirements": {
+    "min_ram_mb": 128
+  }
 }

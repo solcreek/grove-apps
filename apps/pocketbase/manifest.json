@@ -1,18 +1,54 @@
 {
-  "name": "pocketbase",
+  "schema_version": "0.1",
+  "slug": "pocketbase",
+  "name": "PocketBase",
+  "kind": "source",
   "version": "0.25.9",
   "description": "Open source backend with realtime database, auth, and file storage",
   "upstream": "https://github.com/pocketbase/pocketbase",
   "license": "MIT",
-  "runtime": "binary",
-  "port": 8090,
-  "volumes": {
-    "data": "/pb/pb_data"
-  },
-  "health_check": "/api/health",
+  "tags": [
+    "backend",
+    "database",
+    "baas",
+    "firebase-alternative"
+  ],
   "build": {
-    "download": "https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_linux_amd64.zip",
+    "kind": "binary-download",
+    "url": "https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_linux_${ARCH}.zip",
+    "ref": "v0.25.9",
+    "ref_digest": "",
     "entry": "./pocketbase serve --http=0.0.0.0:8090"
   },
-  "tags": ["backend", "database", "baas", "firebase-alternative"]
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 8090,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "data",
+      "path": "/pb/pb_data",
+      "persistent": true
+    }
+  ],
+  "health_check": "/api/health",
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/pocketbase.svg",
+    "category": "dev-tools",
+    "long_description": "PocketBase is an open source backend in a single binary: realtime database, authentication, file storage, and admin dashboard."
+  },
+  "requirements": {
+    "min_ram_mb": 64
+  },
+  "setup": {
+    "url_path": "/_/"
+  }
 }

@@ -1,15 +1,51 @@
 {
-  "name": "vaultwarden",
+  "schema_version": "0.1",
+  "slug": "vaultwarden",
+  "name": "Vaultwarden",
+  "kind": "image",
   "version": "1.32.7",
   "description": "Lightweight Bitwarden-compatible password manager",
   "upstream": "https://github.com/dani-garcia/vaultwarden",
   "license": "AGPL-3.0",
-  "runtime": "binary",
-  "port": 80,
-  "volumes": {
-    "data": "/data"
+  "tags": [
+    "password-manager",
+    "security",
+    "bitwarden-compatible"
+  ],
+  "image": "vaultwarden/server:1.32.7",
+  "image_digest": "",
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 80,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "data",
+      "path": "/data",
+      "persistent": true
+    }
+  ],
+  "env": {
+    "WEBSOCKET_ENABLED": "true"
   },
   "health_check": "/alive",
-  "docker_image": "vaultwarden/server",
-  "tags": ["password-manager", "security", "bitwarden"]
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/vaultwarden.svg",
+    "category": "security",
+    "long_description": "A Bitwarden-compatible server in Rust. All official Bitwarden clients work against it. Comfortable on a Raspberry Pi."
+  },
+  "requirements": {
+    "min_ram_mb": 128
+  },
+  "setup": {
+    "url_path": "/admin"
+  }
 }

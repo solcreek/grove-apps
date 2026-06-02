@@ -1,20 +1,39 @@
 {
-  "name": "excalidraw",
+  "schema_version": "0.1",
+  "slug": "excalidraw",
+  "name": "Excalidraw",
+  "kind": "image",
   "version": "0.18.0",
   "description": "Virtual whiteboard for sketching hand-drawn like diagrams",
   "upstream": "https://github.com/excalidraw/excalidraw",
   "license": "MIT",
-  "type": "static",
-  "base_image": "nginx:alpine",
-  "static_dir": "/usr/share/nginx/html",
-  "port": 80,
+  "tags": [
+    "whiteboard",
+    "drawing",
+    "collaboration"
+  ],
+  "image": "excalidraw/excalidraw:latest",
+  "image_digest": "",
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 80,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [],
   "health_check": "/",
-  "build": {
-    "repo": "https://github.com/excalidraw/excalidraw.git",
-    "install": "yarn install",
-    "build": "yarn build:app",
-    "output": "excalidraw-app/build"
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/excalidraw.svg",
+    "category": "productivity",
+    "long_description": "Excalidraw is a virtual whiteboard for sketching hand-drawn-style diagrams. Stateless \u2014 all drawings live in the browser."
   },
-  "docker_image": "excalidraw/excalidraw",
-  "tags": ["whiteboard", "drawing", "collaboration"]
+  "requirements": {
+    "min_ram_mb": 64
+  }
 }

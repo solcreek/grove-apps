@@ -1,20 +1,50 @@
 {
-  "name": "anythingllm",
+  "schema_version": "0.1",
+  "slug": "anythingllm",
+  "name": "AnythingLLM",
+  "kind": "image",
   "version": "1.7.7",
   "description": "All-in-one AI app for document chat, agents, and more",
   "upstream": "https://github.com/Mintplex-Labs/anything-llm",
   "license": "MIT",
-  "runtime": "node",
-  "base_image": "node:22-alpine",
-  "port": 3001,
-  "volumes": {
-    "storage": "/app/server/storage"
-  },
+  "tags": [
+    "ai",
+    "llm",
+    "rag",
+    "chatbot"
+  ],
+  "image": "mintplexlabs/anythingllm:1.7.7",
+  "image_digest": "",
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 3001,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "storage",
+      "path": "/app/server/storage",
+      "persistent": true
+    }
+  ],
   "env": {
     "STORAGE_DIR": "/app/server/storage",
     "NODE_ENV": "production"
   },
   "health_check": "/api/health",
-  "docker_image": "mintplexlabs/anythingllm",
-  "tags": ["ai", "llm", "rag", "chatbot"]
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/anythingllm.svg",
+    "category": "knowledge",
+    "long_description": "AnythingLLM turns any document, resource, or piece of content into context an LLM can use during chat. Bring your own LLM (OpenAI, Anthropic, local)."
+  },
+  "requirements": {
+    "min_ram_mb": 2048
+  }
 }
