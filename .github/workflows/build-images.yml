@@ -1,17 +1,15 @@
 # Build + push grove-built app images to ghcr.io/solcreek/grove-apps/.
 #
-# This workflow handles every app whose manifest directory contains a
-# build/ subdir with Dockerfile + build.yaml. The build config schema
-# is documented in apps/<owner>/<name>/build/build.yaml comments;
-# the SCHEMA.md "source provenance" section explains why these images
-# exist (type:build entries in the catalog).
+# Architecture: matrix over (app × native runner per arch), then a
+# merge job stitches per-arch images into a multi-arch manifest.
+# Avoids QEMU emulation for arm64 — a 3-5× slowdown that becomes
+# 30+ minutes for compile-heavy apps (open-design pnpm+tsc+Next).
 #
 # Triggers:
 #   - workflow_dispatch: pick a single app to rebuild, or "all"
-#   - push to apps/**/build/**: auto-rebuild the touched apps
+#   - push to apps/**/build/**: auto-rebuild touched apps
 #
-# Auth: uses GITHUB_TOKEN with packages:write. No PAT needed because
-# the org owns both this repo and the GHCR namespace.
+# Auth: GITHUB_TOKEN with packages:write. Same-org GHCR namespace.
 
 name: build-images
 
@@ -44,9 +42,10 @@ jobs:
       - id: list
         name: Discover apps to build
         # On dispatch with a specific app, build just that one.
-        # On push, diff the previous commit to find which build/
-        # directories changed, then build those. On dispatch="all"
-        # or first push, build everything that has a build/ dir.
+        # On push or dispatch=all, build everything that has a build/ dir.
+        # We don't try to diff which build/ changed — rebuilds are idempotent
+        # and the cost vs complexity tradeoff favors building everything when
+        # the workflow itself or any build/ dir changes.
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.app }}" != "all" ]; then
@@ -63,8 +62,81 @@ jobs:
           echo "apps=$apps_json" >> "$GITHUB_OUTPUT"
           echo "Will build: $apps_json"
 
+  # ── Per-arch build on native runners ──────────────────────────
+  # Each (app, arch) pair gets its own runner — amd64 work runs on
+  # x86_64 hardware, arm64 work on aarch64 hardware. The image is
+  # pushed with an -<arch> suffix; the merge job below stitches the
+  # canonical multi-arch manifest from these.
   build:
     needs: discover
+    if: needs.discover.outputs.apps != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        slug: ${{ fromJSON(needs.discover.outputs.apps) }}
+        target:
+          - { os: ubuntu-latest,    platform: linux/amd64, arch: amd64 }
+          - { os: ubuntu-24.04-arm, platform: linux/arm64, arch: arm64 }
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read build config
+        id: cfg
+        run: |
+          set -euo pipefail
+          cfg="apps/${{ matrix.slug }}/build/build.yaml"
+          if [ ! -f "$cfg" ]; then
+            echo "::error::missing build.yaml at $cfg"
+            exit 1
+          fi
+          python3 -c "import yaml,json,sys; print(json.dumps(yaml.safe_load(open('$cfg'))))" > /tmp/cfg.json
+          version=$(jq -r .version /tmp/cfg.json)
+          build_args=$(jq -r '(.build_args // {}) | to_entries | map("\(.key)=\(.value)") | join("\n")' /tmp/cfg.json)
+          image_repo="ghcr.io/solcreek/grove-apps/${{ matrix.slug }}"
+          {
+            echo "image_repo=$image_repo"
+            echo "version=$version"
+            echo "context=apps/${{ matrix.slug }}/build"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "build_args<<EOF"
+            echo "$build_args"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build + push (single arch)
+        # Push each arch separately under a per-arch tag so the merge
+        # job has stable references to compose into the multi-arch
+        # manifest. The per-arch tags are intentionally kept (not
+        # cleaned up after merge) so debugging "which arch failed?"
+        # remains possible.
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ steps.cfg.outputs.context }}
+          file: ${{ steps.cfg.outputs.context }}/Dockerfile
+          platforms: ${{ matrix.target.platform }}
+          build-args: ${{ steps.cfg.outputs.build_args }}
+          tags: |
+            ${{ steps.cfg.outputs.image_repo }}:${{ steps.cfg.outputs.version }}-${{ matrix.target.arch }}
+          push: true
+          provenance: false
+
+  # ── Stitch per-arch images into the canonical multi-arch tag ──
+  # Runs after every arch build succeeds for a given app. Falls
+  # back to ubuntu-latest because manifest composition is
+  # cross-platform (just registry API calls).
+  merge:
+    needs: build
     if: needs.discover.outputs.apps != '[]'
     runs-on: ubuntu-latest
     strategy:
@@ -79,35 +151,14 @@ jobs:
         run: |
           set -euo pipefail
           cfg="apps/${{ matrix.slug }}/build/build.yaml"
-          if [ ! -f "$cfg" ]; then
-            echo "::error::missing build.yaml at $cfg"
-            exit 1
-          fi
-          # Single-shot yaml→json via python; avoids pulling yq.
           python3 -c "import yaml,json,sys; print(json.dumps(yaml.safe_load(open('$cfg'))))" > /tmp/cfg.json
           version=$(jq -r .version /tmp/cfg.json)
-          platforms=$(jq -r '.platforms | join(",")' /tmp/cfg.json)
-          # build_args = "K1=V1,K2=V2,..." for buildx --build-arg loop
-          build_args=$(jq -r '(.build_args // {}) | to_entries | map("\(.key)=\(.value)") | join("\n")' /tmp/cfg.json)
-          # Image path mirrors the manifest slug exactly:
-          #   ghcr.io/solcreek/grove-apps/{owner}/{name}:{version}
-          # This way two projects sharing a name (forks under different
-          # owners) get distinct image paths without registry collision.
           image_repo="ghcr.io/solcreek/grove-apps/${{ matrix.slug }}"
           {
             echo "image_repo=$image_repo"
             echo "version=$version"
-            echo "platforms=$platforms"
-            echo "context=apps/${{ matrix.slug }}/build"
-          } >> "$GITHUB_OUTPUT"
-          # build_args is multi-line; use the HEREDOC form
-          {
-            echo "build_args<<EOF"
-            echo "$build_args"
-            echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
@@ -117,33 +168,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build + push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ steps.cfg.outputs.context }}
-          file: ${{ steps.cfg.outputs.context }}/Dockerfile
-          platforms: ${{ steps.cfg.outputs.platforms }}
-          build-args: ${{ steps.cfg.outputs.build_args }}
-          # Push to both the version tag and a stable "latest" alias.
-          # Latest is convenience for testing; manifests must always
-          # pin to the explicit version tag in production.
-          tags: |
-            ${{ steps.cfg.outputs.image_repo }}:${{ steps.cfg.outputs.version }}
-            ${{ steps.cfg.outputs.image_repo }}:latest
-          push: true
-          provenance: false
-
-      - name: Report digest
-        # The digest is the load-bearing output — curators copy it
-        # into the manifest's source.built_digest before flipping
-        # the manifest from type:upstream to type:build.
+      - name: Compose multi-arch manifest
+        id: merge
+        # buildx imagetools create takes the per-arch tags and writes
+        # a manifest list pointing at both. Same digest semantics as
+        # a single multi-platform build; users just see a normal tag.
         run: |
-          image="${{ steps.cfg.outputs.image_repo }}:${{ steps.cfg.outputs.version }}"
-          echo "::notice title=Built ${{ matrix.slug }}::${image}@${{ steps.build.outputs.digest }}"
-          echo ""
-          echo "Manifest update:"
+          set -euo pipefail
+          repo="${{ steps.cfg.outputs.image_repo }}"
+          ver="${{ steps.cfg.outputs.version }}"
+          docker buildx imagetools create \
+            -t "${repo}:${ver}" \
+            -t "${repo}:latest" \
+            "${repo}:${ver}-amd64" \
+            "${repo}:${ver}-arm64"
+          digest=$(docker buildx imagetools inspect "${repo}:${ver}" --format '{{.Manifest.Digest}}')
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Built ${{ matrix.slug }}::${repo}:${ver}@${digest}"
+
+      - name: Report
+        run: |
+          echo "Manifest update for ${{ matrix.slug }}:"
           echo "  source.type = build"
-          echo "  source.image = ${image}"
-          echo "  source.built_digest = ${{ steps.build.outputs.digest }}"
+          echo "  source.image = ${{ steps.cfg.outputs.image_repo }}:${{ steps.cfg.outputs.version }}"
+          echo "  source.built_digest = ${{ steps.merge.outputs.digest }}"
           echo "  source.built_at = $(date -u +%Y-%m-%dT%H:%M:%SZ)"
