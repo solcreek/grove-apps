@@ -14,10 +14,10 @@
   ],
   "source": {
     "type": "upstream",
-    "image": "gitea/gitea:1.23.7",
+    "image": "gitea/gitea:1.23.7-rootless",
     "maintainer": "official"
   },
-  "image": "gitea/gitea:1.23.7",
+  "image": "gitea/gitea:1.23.7-rootless",
   "image_digest": "",
   "arch": [
     "amd64",
@@ -31,14 +31,14 @@
     },
     {
       "name": "ssh",
-      "container": 22,
+      "container": 2222,
       "protocol": "tcp"
     }
   ],
   "volumes": [
     {
       "name": "data",
-      "path": "/data",
+      "path": "/var/lib/gitea",
       "persistent": true
     },
     {
@@ -48,9 +48,7 @@
     }
   ],
   "env": {
-    "GITEA__security__INSTALL_LOCK": "true",
-    "USER_UID": "0",
-    "USER_GID": "0"
+    "GITEA__security__INSTALL_LOCK": "true"
   },
   "health_check": "/",
   "update_policy": "manual",
