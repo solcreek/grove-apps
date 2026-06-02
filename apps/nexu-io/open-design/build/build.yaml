@@ -1,0 +1,22 @@
+# Open Design — first kind:source-equivalent build in the catalog.
+# Heavier than pocketbase (multi-stage Node/pnpm monorepo) but still
+# fits the same pipeline.
+#
+# arm64 build runs under QEMU emulation in CI and takes ~30 min the
+# first time; amd64 native is ~10 min. We accept the latency once
+# per upstream release.
+
+schema_version: "0.2"
+
+slug: nexu-io/open-design
+version: "0.9.0"
+
+platforms:
+  - linux/amd64
+  - linux/arm64
+
+build_args:
+  OD_VERSION: "0.9.0"
+
+context: .
+dockerfile: Dockerfile
