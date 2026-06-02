@@ -73,5 +73,15 @@ EXPOSE 7456
 # the web will start returning 502s on /api and grove's healthcheck
 # fails — both desirable signals for the container runtime to
 # restart us.
+#
+# Two non-obvious things in the launch line:
+#  - daemon entry is dist/cli.js directly; the bin/od.mjs wrapper
+#    isn't preserved in the pnpm-installed workspace layout, and
+#    cli.js works as a standalone entry.
+#  - HOSTNAME is force-set to 0.0.0.0 right before the web server.
+#    Under --net=host (grove's default), the container inherits the
+#    dew VM's hostname "dew", and Next.js standalone reads
+#    process.env.HOSTNAME to decide what address to bind. Without
+#    the override it tries to bind to "dew" and fails ENOTFOUND.
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["bash", "-c", "node apps/daemon/bin/od.mjs --no-open & cd apps/web/.next/standalone/apps/web && exec node server.js"]
+CMD ["bash", "-c", "node apps/daemon/dist/cli.js --no-open & cd apps/web/.next/standalone/apps/web && HOSTNAME=0.0.0.0 PORT=3000 exec node server.js"]
