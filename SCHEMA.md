@@ -151,12 +151,15 @@ digest).
 ```
 
 **`type: "build"`** — Grove builds the image from source. The
-manifest records exactly what was built and how.
+manifest records exactly what was built and how. Built images live
+at `ghcr.io/solcreek/grove-apps/{owner}/{name}:{version}` — the path
+mirrors the manifest slug so forks under different owners coexist
+without collision.
 
 ```jsonc
 "source": {
   "type": "build",
-  "image": "ghcr.io/grove-apps/open-design:0.9.0",
+  "image": "ghcr.io/solcreek/grove-apps/nexu-io/open-design:0.9.0",
   "repo": "https://github.com/nexu-io/open-design",
   "ref": "open-design-v0.9.0",
   "commit": "<sha>",

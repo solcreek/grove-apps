@@ -85,13 +85,17 @@ jobs:
           fi
           # Single-shot yaml→json via python; avoids pulling yq.
           python3 -c "import yaml,json,sys; print(json.dumps(yaml.safe_load(open('$cfg'))))" > /tmp/cfg.json
-          image_name=$(jq -r .image_name /tmp/cfg.json)
           version=$(jq -r .version /tmp/cfg.json)
           platforms=$(jq -r '.platforms | join(",")' /tmp/cfg.json)
           # build_args = "K1=V1,K2=V2,..." for buildx --build-arg loop
           build_args=$(jq -r '(.build_args // {}) | to_entries | map("\(.key)=\(.value)") | join("\n")' /tmp/cfg.json)
+          # Image path mirrors the manifest slug exactly:
+          #   ghcr.io/solcreek/grove-apps/{owner}/{name}:{version}
+          # This way two projects sharing a name (forks under different
+          # owners) get distinct image paths without registry collision.
+          image_repo="ghcr.io/solcreek/grove-apps/${{ matrix.slug }}"
           {
-            echo "image_name=$image_name"
+            echo "image_repo=$image_repo"
             echo "version=$version"
             echo "platforms=$platforms"
             echo "context=apps/${{ matrix.slug }}/build"
@@ -125,8 +129,8 @@ jobs:
           # Latest is convenience for testing; manifests must always
           # pin to the explicit version tag in production.
           tags: |
-            ghcr.io/solcreek/grove-apps/${{ steps.cfg.outputs.image_name }}:${{ steps.cfg.outputs.version }}
-            ghcr.io/solcreek/grove-apps/${{ steps.cfg.outputs.image_name }}:latest
+            ${{ steps.cfg.outputs.image_repo }}:${{ steps.cfg.outputs.version }}
+            ${{ steps.cfg.outputs.image_repo }}:latest
           push: true
           provenance: false
 
@@ -135,10 +139,11 @@ jobs:
         # into the manifest's source.built_digest before flipping
         # the manifest from type:upstream to type:build.
         run: |
-          echo "::notice title=Built ${{ matrix.slug }}::ghcr.io/solcreek/grove-apps/${{ steps.cfg.outputs.image_name }}:${{ steps.cfg.outputs.version }}@${{ steps.build.outputs.digest }}"
+          image="${{ steps.cfg.outputs.image_repo }}:${{ steps.cfg.outputs.version }}"
+          echo "::notice title=Built ${{ matrix.slug }}::${image}@${{ steps.build.outputs.digest }}"
           echo ""
           echo "Manifest update:"
           echo "  source.type = build"
-          echo "  source.image = ghcr.io/solcreek/grove-apps/${{ steps.cfg.outputs.image_name }}:${{ steps.cfg.outputs.version }}"
+          echo "  source.image = ${image}"
           echo "  source.built_digest = ${{ steps.build.outputs.digest }}"
           echo "  source.built_at = $(date -u +%Y-%m-%dT%H:%M:%SZ)"

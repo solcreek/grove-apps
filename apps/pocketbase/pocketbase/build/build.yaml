@@ -1,20 +1,20 @@
 # Per-app build config consumed by .github/workflows/build-images.yml.
 # Each app under apps/{owner}/{name}/build/ may have this file alongside
-# its Dockerfile. The workflow reads it to know what tag to push, which
-# platforms to build for, and which build args to thread through.
+# its Dockerfile. The workflow reads it to know what platforms to build
+# for and which build args to thread through.
+#
+# Image path convention (NOT configurable per-app):
+#   ghcr.io/solcreek/grove-apps/{owner}/{name}:{version}
+# The owner/name segment mirrors the manifest slug so two projects
+# sharing a name (different forks) can coexist in the registry.
 #
 # schema_version: pin to detect breaking changes in build.yaml shape
 #                 independently of the manifest schema_version.
 
-schema_version: "0.1"
+schema_version: "0.2"
 
 # Slug must match the parent manifest's slug.
 slug: pocketbase/pocketbase
-
-# Image base name. The full pushed image is:
-#   ghcr.io/solcreek/grove-apps/<image_name>:<version>
-# Keeping image_name short avoids ghcr.io/solcreek/grove-apps/pocketbase/pocketbase.
-image_name: pocketbase
 version: "0.39.0"
 
 platforms:
