@@ -53,6 +53,16 @@ RUN pnpm install --frozen-lockfile
 RUN OD_WEB_OUTPUT_MODE=standalone pnpm --filter @open-design/web build
 RUN pnpm --filter @open-design/daemon build
 
+# Next.js standalone output is a self-contained server bundle but
+# DOES NOT include the static asset directories — that's a known
+# pitfall called out in the Next.js docs. Without the copy step
+# the server returns the SPA fallback HTML for every
+# /_next/static/* request, browsers then "execute" HTML as JS, and
+# the console fills with "Unexpected token '<'" syntax errors. Copy
+# both dirs into the standalone tree at the paths the server expects.
+RUN cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static \
+ && cp -r apps/web/public apps/web/.next/standalone/apps/web/public
+
 # Runtime ports + paths. OD_PORT is where the daemon listens;
 # the web reads the same env to find the daemon.
 ENV PORT=3000 \
