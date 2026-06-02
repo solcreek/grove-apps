@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.2",
+  "slug": "sissbruecker/linkding",
+  "name": "Linkding",
+  "kind": "image",
+  "version": "1.36.0",
+  "description": "Minimal, fast bookmark manager with tags and full-text search",
+  "upstream": "https://github.com/sissbruecker/linkding",
+  "license": "MIT",
+  "tags": [
+    "bookmarks",
+    "read-later",
+    "pocket-alternative",
+    "raindrop-alternative"
+  ],
+  "source": {
+    "type": "upstream",
+    "image": "sissbruecker/linkding:1.36.0",
+    "maintainer": "official"
+  },
+  "image": "sissbruecker/linkding:1.36.0",
+  "image_digest": "",
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 9090,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "data",
+      "path": "/etc/linkding/data",
+      "persistent": true
+    }
+  ],
+  "env": {
+    "LD_SUPERUSER_NAME": "admin"
+  },
+  "secrets": [
+    {
+      "name": "LD_SUPERUSER_PASSWORD",
+      "generate": "random:32"
+    }
+  ],
+  "health_check": "/health",
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/linkding.svg",
+    "category": "knowledge",
+    "long_description": "Linkding is a lightweight bookmark manager with tags, full-text search, and a clean web UI. Replaces SaaS read-later apps like Pocket and Raindrop. Single-container, SQLite backed \u2014 boots in under a second."
+  },
+  "requirements": {
+    "min_ram_mb": 64
+  },
+  "setup": {
+    "url_path": "/login/"
+  }
+}

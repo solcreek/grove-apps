@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "slug": "uptime-kuma",
+  "schema_version": "0.2",
+  "slug": "louislam/uptime-kuma",
   "name": "Uptime Kuma",
   "kind": "image",
   "version": "2.4.0",
@@ -12,6 +12,11 @@
     "uptime",
     "status-page"
   ],
+  "source": {
+    "type": "upstream",
+    "image": "louislam/uptime-kuma:2.4.0",
+    "maintainer": "official"
+  },
   "image": "louislam/uptime-kuma:2.4.0",
   "image_digest": "",
   "arch": [

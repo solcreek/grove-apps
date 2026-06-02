@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "slug": "memos",
+  "schema_version": "0.2",
+  "slug": "usememos/memos",
   "name": "Memos",
   "kind": "image",
   "version": "0.24.3",
@@ -12,6 +12,11 @@
     "memo",
     "knowledge-base"
   ],
+  "source": {
+    "type": "upstream",
+    "image": "neosmemo/memos:0.24.3",
+    "maintainer": "official"
+  },
   "image": "neosmemo/memos:0.24.3",
   "image_digest": "",
   "arch": [

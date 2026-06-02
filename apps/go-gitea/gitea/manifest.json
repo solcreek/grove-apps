@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "slug": "gitea",
+  "schema_version": "0.2",
+  "slug": "go-gitea/gitea",
   "name": "Gitea",
   "kind": "image",
   "version": "1.23.7",
@@ -12,6 +12,11 @@
     "code-hosting",
     "devtools"
   ],
+  "source": {
+    "type": "upstream",
+    "image": "gitea/gitea:1.23.7",
+    "maintainer": "official"
+  },
   "image": "gitea/gitea:1.23.7",
   "image_digest": "",
   "arch": [

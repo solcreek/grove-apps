@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "slug": "plausible",
+  "schema_version": "0.2",
+  "slug": "plausible/community-edition",
   "name": "Plausible Analytics",
   "kind": "image",
   "version": "2.2.1",
@@ -12,6 +12,11 @@
     "privacy",
     "google-analytics-alternative"
   ],
+  "source": {
+    "type": "upstream",
+    "image": "ghcr.io/plausible/community-edition:v2.2.1",
+    "maintainer": "official"
+  },
   "image": "ghcr.io/plausible/community-edition:v2.2.1",
   "image_digest": "",
   "arch": [

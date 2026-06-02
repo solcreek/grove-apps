@@ -1,15 +1,27 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "apps": [
-    "vaultwarden",
-    "memos",
-    "gitea",
-    "pocketbase",
-    "ghost",
-    "plausible",
-    "uptime-kuma",
-    "nextcloud",
-    "photoprism",
-    "linkding"
-  ]
+    "dani-garcia/vaultwarden",
+    "go-gitea/gitea",
+    "louislam/uptime-kuma",
+    "nextcloud/server",
+    "photoprism/photoprism",
+    "plausible/community-edition",
+    "pocketbase/pocketbase",
+    "sissbruecker/linkding",
+    "tryghost/ghost",
+    "usememos/memos"
+  ],
+  "aliases": {
+    "ghost": "tryghost/ghost",
+    "gitea": "go-gitea/gitea",
+    "linkding": "sissbruecker/linkding",
+    "memos": "usememos/memos",
+    "nextcloud": "nextcloud/server",
+    "photoprism": "photoprism/photoprism",
+    "plausible": "plausible/community-edition",
+    "pocketbase": "pocketbase/pocketbase",
+    "uptime-kuma": "louislam/uptime-kuma",
+    "vaultwarden": "dani-garcia/vaultwarden"
+  }
 }

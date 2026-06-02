@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "slug": "ghost",
+  "schema_version": "0.2",
+  "slug": "tryghost/ghost",
   "name": "Ghost",
   "kind": "image",
   "version": "5.114.1",
@@ -12,6 +12,11 @@
     "cms",
     "publishing"
   ],
+  "source": {
+    "type": "upstream",
+    "image": "ghost:5-alpine",
+    "maintainer": "official"
+  },
   "image": "ghost:5-alpine",
   "image_digest": "",
   "arch": [

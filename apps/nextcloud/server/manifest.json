@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.2",
+  "slug": "nextcloud/server",
+  "name": "Nextcloud",
+  "kind": "image",
+  "version": "30",
+  "description": "Self-hosted productivity platform \u2014 files, calendar, contacts, more",
+  "upstream": "https://github.com/nextcloud/server",
+  "license": "AGPL-3.0",
+  "tags": [
+    "files",
+    "calendar",
+    "contacts",
+    "google-drive-alternative",
+    "dropbox-alternative"
+  ],
+  "source": {
+    "type": "upstream",
+    "image": "nextcloud:30-apache",
+    "maintainer": "official"
+  },
+  "image": "nextcloud:30-apache",
+  "image_digest": "",
+  "arch": [
+    "amd64",
+    "arm64"
+  ],
+  "ports": [
+    {
+      "name": "http",
+      "container": 80,
+      "protocol": "tcp"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "data",
+      "path": "/var/www/html/data",
+      "persistent": true
+    },
+    {
+      "name": "app",
+      "path": "/var/www/html",
+      "persistent": true
+    }
+  ],
+  "env": {
+    "SQLITE_DATABASE": "nextcloud",
+    "NEXTCLOUD_TRUSTED_DOMAINS": "localhost"
+  },
+  "health_check": "/status.php",
+  "update_policy": "manual",
+  "display": {
+    "icon": "icons/nextcloud.svg",
+    "category": "productivity",
+    "long_description": "Nextcloud is a self-hosted productivity platform: file sync and share, calendar, contacts, video calls, collaborative documents \u2014 the open-source replacement for Google Workspace / Microsoft 365. Demo-friendly with the bundled SQLite backend; production deployments typically swap in PostgreSQL."
+  },
+  "requirements": {
+    "min_ram_mb": 512
+  },
+  "setup": {
+    "url_path": "/"
+  }
+}

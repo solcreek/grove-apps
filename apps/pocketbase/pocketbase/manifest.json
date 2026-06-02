@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "slug": "pocketbase",
+  "schema_version": "0.2",
+  "slug": "pocketbase/pocketbase",
   "name": "PocketBase",
   "kind": "image",
   "version": "0.39.0",
@@ -13,6 +13,12 @@
     "baas",
     "firebase-alternative"
   ],
+  "source": {
+    "type": "upstream",
+    "image": "ghcr.io/muchobien/pocketbase:0.39.0",
+    "maintainer": "community",
+    "maintainer_repo": "https://github.com/muchobien/pocketbase-docker"
+  },
   "image": "ghcr.io/muchobien/pocketbase:0.39.0",
   "image_digest": "",
   "arch": [

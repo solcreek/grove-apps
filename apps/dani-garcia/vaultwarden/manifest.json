@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "slug": "vaultwarden",
+  "schema_version": "0.2",
+  "slug": "dani-garcia/vaultwarden",
   "name": "Vaultwarden",
   "kind": "image",
   "version": "1.32.7",
@@ -12,6 +12,11 @@
     "security",
     "bitwarden-compatible"
   ],
+  "source": {
+    "type": "upstream",
+    "image": "vaultwarden/server:1.32.7",
+    "maintainer": "official"
+  },
   "image": "vaultwarden/server:1.32.7",
   "image_digest": "",
   "arch": [
