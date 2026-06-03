@@ -137,15 +137,28 @@ jobs:
             echo "${name}=${val}" >> /tmp/secrets.env
           done < <(jq -r '.secrets // [] | .[].name' "$mf")
 
+          # Persist user_inputs defaults the same way. Mirrors
+          # `grove install --yes`: any input without a default is the
+          # manifest author's bug — fail the smoke loudly rather than
+          # pass literal '${user.X}' through to docker run.
+          : > /tmp/user.env
+          while IFS=$'\t' read -r name dflt; do
+            [ -z "$name" ] && continue
+            if [ "$dflt" = "null" ]; then
+              echo "::error::user_input '$name' has no default — smoke can't auto-fill; set one or smoke_test.skip"
+              exit 1
+            fi
+            echo "${name}=${dflt}" >> /tmp/user.env
+          done < <(jq -r '.user_inputs // [] | .[] | "\(.name)\t\(.default // "null")"' "$mf")
+
           # Build env flags from the (possibly v0.3) env block.
-          # v0.3 env values may contain ${secret.NAME} and
-          # ${grove.public_url} interpolation; substitute both here
-          # before passing to docker run. ${grove.public_url}
-          # resolves to the same http://localhost:<port> grove uses
-          # at install time. Other ${X.Y} forms (${user.X},
-          # ${grove.old_public_url}) are unsupported in smoke and
-          # pass through as literals (broken-by-design; if a
-          # manifest needs user_inputs, it should set smoke_test.skip).
+          # v0.3 env values may contain ${secret.NAME}, ${user.NAME},
+          # and ${grove.public_url} interpolation; substitute all
+          # three here before passing to docker run.
+          # ${grove.public_url} resolves to the same
+          # http://localhost:<port> grove uses at install time. Other
+          # ${X.Y} forms (${grove.old_public_url}) are unsupported in
+          # smoke and pass through as literals.
           env_flags=""
           while IFS=$'\t' read -r k v; do
             # Substitute ${secret.NAME}
@@ -153,6 +166,11 @@ jobs:
               [ -z "$sname" ] && continue
               v="${v//\$\{secret.$sname\}/$sval}"
             done < /tmp/secrets.env
+            # Substitute ${user.NAME}
+            while IFS='=' read -r uname uval; do
+              [ -z "$uname" ] && continue
+              v="${v//\$\{user.$uname\}/$uval}"
+            done < /tmp/user.env
             # Substitute ${grove.public_url}
             v="${v//\$\{grove.public_url\}/http://localhost:$port}"
             # Each value must be single-shell-quoted because env
