@@ -38,6 +38,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/solcreek/grove-apps/internal/registry"
 )
 
 // Manifest mirrors the v0.2 catalog schema. Unknown fields pass
@@ -387,7 +389,7 @@ func checkImageAvailability(manifests map[string]*Manifest, paths map[string]str
 			if m.Image == "" {
 				return
 			}
-			if err := headImage(client, m.Image); err != nil {
+			if err := registry.HeadImage(client, m.Image); err != nil {
 				results <- result{path: path, err: &validationError{
 					File: path, Field: "image",
 					Msg:  fmt.Sprintf("not reachable (%s): %v", m.Image, err),
@@ -408,131 +410,5 @@ func checkImageAvailability(manifests map[string]*Manifest, paths map[string]str
 	return errs
 }
 
-// headImage issues an OCI manifest HEAD for image ref. Handles
-// docker.io, ghcr.io, and plain registries. Bearer-token flow for
-// public images via the registry's WWW-Authenticate challenge.
-//
-// Returns nil when the image is reachable (200 / 401 with valid
-// challenge that we then satisfy). Errors are user-friendly:
-// "404 not found", "rate limited", etc.
-func headImage(client *http.Client, ref string) error {
-	registry, repo, tag := parseImageRef(ref)
-	manifestURL := fmt.Sprintf("https://%s/v2/%s/manifests/%s", registry, repo, tag)
-
-	req, _ := http.NewRequest("HEAD", manifestURL, nil)
-	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
-
-	switch resp.StatusCode {
-	case 200:
-		return nil
-	case 401:
-		// Acquire anonymous bearer token from the WWW-Authenticate
-		// challenge, retry. ghcr.io and docker.io both work this way
-		// for public images.
-		token := acquireToken(client, resp.Header.Get("Www-Authenticate"))
-		if token == "" {
-			return fmt.Errorf("HTTP 401 (cannot obtain anonymous token)")
-		}
-		req2, _ := http.NewRequest("HEAD", manifestURL, nil)
-		req2.Header.Set("Authorization", "Bearer "+token)
-		req2.Header.Set("Accept", "application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json")
-		resp2, err := client.Do(req2)
-		if err != nil {
-			return err
-		}
-		resp2.Body.Close()
-		if resp2.StatusCode == 200 {
-			return nil
-		}
-		return fmt.Errorf("HTTP %d after auth", resp2.StatusCode)
-	case 404:
-		return fmt.Errorf("HTTP 404 (tag may have been removed upstream)")
-	case 429:
-		return fmt.Errorf("HTTP 429 rate limited (anonymous pull limit hit)")
-	default:
-		return fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
-}
-
-// parseImageRef splits an image ref like
-//   - "vaultwarden/server:1.32.7" → ("registry-1.docker.io", "vaultwarden/server", "1.32.7")
-//   - "ghcr.io/solcreek/grove-apps/pocketbase:0.39.0" → ("ghcr.io", "solcreek/grove-apps/pocketbase", "0.39.0")
-//   - "image"                  → ("registry-1.docker.io", "library/image", "latest")
-//
-// Docker Hub aliases the bare "image" to "library/image" — same
-// behavior as `docker pull`. Tag defaults to "latest" when absent.
-func parseImageRef(ref string) (registry, repo, tag string) {
-	tag = "latest"
-	if i := strings.LastIndex(ref, ":"); i > strings.LastIndex(ref, "/") {
-		tag = ref[i+1:]
-		ref = ref[:i]
-	}
-	// Registry detection: only treat as registry host if it has a
-	// dot/colon AND it's the first path segment. Otherwise it's
-	// Docker Hub's namespace.
-	first := ""
-	if i := strings.Index(ref, "/"); i >= 0 {
-		first = ref[:i]
-	}
-	if strings.ContainsAny(first, ".:") {
-		registry = first
-		repo = ref[len(first)+1:]
-	} else {
-		registry = "registry-1.docker.io"
-		repo = ref
-		if !strings.Contains(repo, "/") {
-			repo = "library/" + repo
-		}
-	}
-	return
-}
-
-// acquireToken parses a WWW-Authenticate Bearer challenge and
-// requests an anonymous token. ghcr.io and docker.io return JSON
-// {"token": "..."} from the realm URL with the scope query.
-func acquireToken(client *http.Client, challenge string) string {
-	if !strings.HasPrefix(challenge, "Bearer ") {
-		return ""
-	}
-	params := parseAuthChallenge(challenge[len("Bearer "):])
-	realm := params["realm"]
-	if realm == "" {
-		return ""
-	}
-	url := realm + "?service=" + params["service"]
-	if scope := params["scope"]; scope != "" {
-		url += "&scope=" + scope
-	}
-	resp, err := client.Get(url)
-	if err != nil {
-		return ""
-	}
-	defer resp.Body.Close()
-	var body struct {
-		Token       string `json:"token"`
-		AccessToken string `json:"access_token"`
-	}
-	_ = json.NewDecoder(resp.Body).Decode(&body)
-	if body.Token != "" {
-		return body.Token
-	}
-	return body.AccessToken
-}
-
-func parseAuthChallenge(s string) map[string]string {
-	out := map[string]string{}
-	// "realm=\"x\",service=\"y\",scope=\"z\""
-	for _, part := range strings.Split(s, ",") {
-		kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
-		if len(kv) != 2 {
-			continue
-		}
-		out[kv[0]] = strings.Trim(kv[1], `"`)
-	}
-	return out
-}
+// HEAD-image flow moved to internal/registry (shared with cmd/pin).
+// parseImageRef / acquireToken / parseAuthChallenge live there.

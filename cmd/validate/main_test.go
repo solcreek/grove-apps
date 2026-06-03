@@ -2,52 +2,8 @@ package main
 
 import "testing"
 
-// parseImageRef is the load-bearing piece for Layer 2 — getting it
-// wrong sends HEADs to the wrong host or wrong path and every check
-// reports "404". Pin Docker Hub default + ghcr.io + bare image cases.
-func TestParseImageRef(t *testing.T) {
-	cases := []struct {
-		in   string
-		host string
-		repo string
-		tag  string
-	}{
-		// docker hub explicit namespace
-		{"vaultwarden/server:1.32.7", "registry-1.docker.io", "vaultwarden/server", "1.32.7"},
-		// bare image (library/*)
-		{"alpine:3.20", "registry-1.docker.io", "library/alpine", "3.20"},
-		// no tag → latest
-		{"vaultwarden/server", "registry-1.docker.io", "vaultwarden/server", "latest"},
-		// ghcr.io explicit
-		{"ghcr.io/solcreek/grove-apps/pocketbase/pocketbase:0.39.0",
-			"ghcr.io", "solcreek/grove-apps/pocketbase/pocketbase", "0.39.0"},
-		// ghcr.io with port (registry:port — colon ambiguity test)
-		{"my.registry:5000/foo/bar:v1", "my.registry:5000", "foo/bar", "v1"},
-	}
-	for _, c := range cases {
-		h, r, t2 := parseImageRef(c.in)
-		if h != c.host || r != c.repo || t2 != c.tag {
-			t.Errorf("parseImageRef(%q) = (%q, %q, %q), want (%q, %q, %q)",
-				c.in, h, r, t2, c.host, c.repo, c.tag)
-		}
-	}
-}
-
-// Auth challenge parser must survive arbitrary key order + missing
-// scope (some registries don't include it for HEAD requests).
-func TestParseAuthChallenge(t *testing.T) {
-	in := `realm="https://ghcr.io/token",service="ghcr.io",scope="repository:solcreek/grove-apps/pocketbase/pocketbase:pull"`
-	got := parseAuthChallenge(in)
-	if got["realm"] != "https://ghcr.io/token" {
-		t.Errorf("realm = %q", got["realm"])
-	}
-	if got["service"] != "ghcr.io" {
-		t.Errorf("service = %q", got["service"])
-	}
-	if !contains(got["scope"], "pocketbase") {
-		t.Errorf("scope = %q", got["scope"])
-	}
-}
+// ParseImageRef / parseAuthChallenge tests moved to internal/registry
+// when the HEAD-image flow was extracted (shared with cmd/pin).
 
 func contains(s, sub string) bool {
 	for i := 0; i+len(sub) <= len(s); i++ {
