@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.3",
+  "slug": "usememos/memos",
+  "name": "Memos",
+  "version": "0.24.3",
+  "description": "Lightweight self-hosted memo hub",
+  "upstream": "https://github.com/usememos/memos",
+  "license": "MIT",
+  "tags": ["notes", "memo", "knowledge-base"],
+
+  "source": {
+    "type": "upstream",
+    "image": "neosmemo/memos:0.24.3",
+    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "maintainer": "official"
+  },
+
+  "arch": ["amd64", "arm64"],
+
+  "services": [
+    {
+      "name": "app",
+      "image": "neosmemo/memos:0.24.3",
+      "volumes": [
+        {
+          "name": "data",
+          "path": "/var/opt/memos",
+          "role": "state",
+          "init_chown": "1000:1000",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 5230, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/" },
+        "start_period_seconds": 15
+      }
+    }
+  ],
+
+  "display": {
+    "icon": "icons/memos.svg",
+    "category": "productivity",
+    "long_description": "Memos is a privacy-first, open-source note-taking service. Markdown-native, single-binary Go server with embedded SQLite. The minimal-config archetype: no secrets needed, no user inputs, no env vars — just a volume and a port."
+  },
+
+  "requirements": {
+    "min_ram_mb": 128
+  },
+
+  "setup": {
+    "url_path": "/auth/signup"
+  }
+}

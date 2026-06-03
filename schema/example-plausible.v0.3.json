@@ -1,0 +1,157 @@
+{
+  "schema_version": "0.3",
+  "slug": "plausible/community-edition",
+  "name": "Plausible Analytics",
+  "version": "3.2.1",
+  "description": "Privacy-friendly Google Analytics alternative",
+  "upstream": "https://github.com/plausible/analytics",
+  "license": "AGPL-3.0",
+  "tags": ["analytics", "privacy", "google-analytics-alternative"],
+
+  "source": {
+    "type": "upstream",
+    "image": "ghcr.io/plausible/community-edition:v3.2.1",
+    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "maintainer": "official"
+  },
+
+  "arch": ["amd64", "arm64"],
+
+  "user_inputs": [
+    {
+      "name": "ADMIN_EMAIL",
+      "label": "Admin email",
+      "description": "Used for the first admin account and outbound notification 'from' address.",
+      "type": "email",
+      "required": true
+    },
+    {
+      "name": "SMTP_HOST",
+      "label": "SMTP server",
+      "description": "Outgoing mail relay. Leave blank to disable email notifications.",
+      "type": "string",
+      "required": false,
+      "placeholder": "smtp.example.com"
+    }
+  ],
+
+  "secrets": [
+    { "name": "SECRET_KEY_BASE", "generate": "random:64", "fork_policy": "preserve" },
+    { "name": "TOTP_VAULT_KEY", "generate": "random:32", "fork_policy": "preserve" },
+    { "name": "POSTGRES_PASSWORD", "generate": "random:32", "fork_policy": "rotate" }
+  ],
+
+  "services": [
+    {
+      "name": "postgres",
+      "image": "postgres:16-alpine",
+      "env": {
+        "POSTGRES_DB": "plausible",
+        "POSTGRES_USER": "plausible",
+        "POSTGRES_PASSWORD": "${secret.POSTGRES_PASSWORD}"
+      },
+      "volumes": [
+        {
+          "name": "pg_data",
+          "path": "/var/lib/postgresql/data",
+          "role": "state",
+          "init_chown": "999:999",
+          "backup": {
+            "driver": "pg_dump",
+            "dbname": "plausible",
+            "username": "plausible",
+            "password_secret": "POSTGRES_PASSWORD"
+          }
+        }
+      ],
+      "health": {
+        "type": "cmd",
+        "cmd": ["pg_isready", "-U", "plausible", "-d", "plausible"],
+        "interval_seconds": 5,
+        "start_period_seconds": 30
+      },
+      "stop_timeout_seconds": 30
+    },
+
+    {
+      "name": "clickhouse",
+      "image": "clickhouse/clickhouse-server:24-alpine",
+      "volumes": [
+        {
+          "name": "ch_data",
+          "path": "/var/lib/clickhouse",
+          "role": "state",
+          "init_chown": "101:101",
+          "backup": { "driver": "clickhouse-backup" }
+        },
+        {
+          "name": "ch_logs",
+          "path": "/var/log/clickhouse-server",
+          "role": "ephemeral"
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 8123 }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/ping" },
+        "interval_seconds": 5,
+        "start_period_seconds": 30
+      },
+      "stop_timeout_seconds": 60
+    },
+
+    {
+      "name": "app",
+      "image": "ghcr.io/plausible/community-edition:v3.2.1",
+      "env": {
+        "BASE_URL": "${grove.public_url}",
+        "DATABASE_URL": "postgres://plausible:${secret.POSTGRES_PASSWORD}@postgres:5432/plausible",
+        "CLICKHOUSE_DATABASE_URL": "http://clickhouse:8123/plausible",
+        "SECRET_KEY_BASE": "${secret.SECRET_KEY_BASE}",
+        "TOTP_VAULT_KEY": "${secret.TOTP_VAULT_KEY}",
+        "ADMIN_USER_EMAIL": "${user.ADMIN_EMAIL}",
+        "MAILER_ADAPTER": "Bamboo.SMTPAdapter",
+        "SMTP_HOST_ADDR": "${user.SMTP_HOST}"
+      },
+      "depends_on": ["postgres", "clickhouse"],
+      "ports": [
+        { "name": "http", "container": 8000, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/api/health" },
+        "interval_seconds": 10,
+        "start_period_seconds": 60
+      },
+      "hooks": {
+        "post_restore": [
+          {
+            "cmd": [
+              "psql",
+              "${DATABASE_URL}",
+              "-c",
+              "UPDATE sites SET domain = REPLACE(domain, '${grove.old_public_url}', '${grove.public_url}'); UPDATE shared_links SET slug = slug;"
+            ],
+            "timeout_seconds": 600
+          }
+        ]
+      }
+    }
+  ],
+
+  "display": {
+    "icon": "icons/plausible.svg",
+    "category": "analytics",
+    "long_description": "Plausible is a privacy-friendly analytics tool — no cookies, GDPR / CCPA / PECR compliant out of the box. Lightweight script, simple dashboard."
+  },
+
+  "requirements": {
+    "min_ram_mb": 1024
+  },
+
+  "setup": {
+    "url_path": "/register"
+  }
+}
