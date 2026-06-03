@@ -27,8 +27,8 @@
     },
     "slug": {
       "type": "string",
-      "pattern": "^(?!.*\\.\\.)[a-z0-9]([a-z0-9.-]*[a-z0-9])?/[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
-      "description": "<owner>/<name>. Lowercase. Matches the directory path apps/<slug>/manifest.json. The slug is used directly as a filesystem path component, so the regex explicitly forbids '..' anywhere (path traversal guard), leading/trailing dots, and segments that don't start+end with alphanumeric. Apps published outside github.com prefix owner with the forge hostname (e.g. codeberg.org/forgejo/forgejo)."
+      "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*/[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+      "description": "<owner>/<name>. Lowercase. Matches the directory path apps/<slug>/manifest.json. The slug is used directly as a filesystem path component. Owner is dot-separated alphanumeric segments (each segment starts+ends with [a-z0-9], may contain dashes) — this structure naturally forbids '..', leading/trailing dots, and consecutive dots without needing regex lookahead (so the same pattern compiles under both RE2 and PCRE). Apps published outside github.com prefix owner with the forge hostname (e.g. codeberg.org/forgejo/forgejo)."
     },
     "name": {
       "type": "string",

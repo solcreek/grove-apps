@@ -126,6 +126,27 @@ func main() {
 		if info.IsDir() || filepath.Base(path) != "manifest.json" {
 			return nil
 		}
+		// Dispatch by schema_version: v0.3 takes the JSON Schema
+		// path (in v3.go), v0.1/v0.2 stay on the legacy Go-struct
+		// path. peekSchemaVersion is cheap (one ReadFile + minimal
+		// json.Unmarshal of a single field), so we never duplicate
+		// the parse on the common case.
+		sv, peekErr := peekSchemaVersion(path)
+		if peekErr != nil {
+			errs = append(errs, validationError{File: path, Msg: "read: " + peekErr.Error()})
+			return nil
+		}
+		if isV3(sv) {
+			m3, v3Errs := validateV3(path, root)
+			errs = append(errs, v3Errs...)
+			if m3 == nil {
+				return nil
+			}
+			shim := shimV3ToManifest(m3)
+			manifests[shim.Slug] = shim
+			manifestPaths[shim.Slug] = path
+			return nil
+		}
 		m, fileErrs := loadManifest(path)
 		errs = append(errs, fileErrs...)
 		if m == nil {
