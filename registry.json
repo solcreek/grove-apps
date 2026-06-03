@@ -6,6 +6,7 @@
     "nextcloud/server",
     "nexu-io/open-design",
     "photoprism/photoprism",
+    "plausible/community-edition",
     "pocketbase/pocketbase",
     "sissbruecker/linkding",
     "tryghost/ghost",
@@ -18,6 +19,7 @@
     "nextcloud": "nextcloud/server",
     "open-design": "nexu-io/open-design",
     "photoprism": "photoprism/photoprism",
+    "plausible": "plausible/community-edition",
     "pocketbase": "pocketbase/pocketbase",
     "uptime-kuma": "louislam/uptime-kuma",
     "vaultwarden": "dani-garcia/vaultwarden"
