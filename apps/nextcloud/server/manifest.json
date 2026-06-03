@@ -17,7 +17,7 @@
   "source": {
     "type": "upstream",
     "image": "nextcloud:30-apache",
-    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "image_digest": "sha256:fb966733647ea03f0446b0c22eac9733c8eb616d37b960caca9d4c3010e14a08",
     "maintainer": "official"
   },
 

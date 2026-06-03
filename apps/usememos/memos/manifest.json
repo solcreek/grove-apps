@@ -15,7 +15,7 @@
   "source": {
     "type": "upstream",
     "image": "neosmemo/memos:0.24.3",
-    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "image_digest": "sha256:e5022ebfbe176164928dc2ea8c196a077e8b35f28e7206e99a99ccd55f332f6f",
     "maintainer": "official"
   },
 

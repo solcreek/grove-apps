@@ -15,7 +15,7 @@
   "source": {
     "type": "upstream",
     "image": "ghost:5-alpine",
-    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "image_digest": "sha256:a0506f3f05f5bdc6c950c5113cdcdb1e1f96fbf15f6dc0a39fc093c25348bdb5",
     "maintainer": "official"
   },
 
