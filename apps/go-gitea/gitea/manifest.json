@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.3",
+  "slug": "go-gitea/gitea",
+  "name": "Gitea",
+  "version": "1.23.7",
+  "description": "Self-hosted Git service",
+  "upstream": "https://github.com/go-gitea/gitea",
+  "license": "MIT",
+  "tags": [
+    "git",
+    "code-hosting",
+    "devtools"
+  ],
+
+  "source": {
+    "type": "upstream",
+    "image": "gitea/gitea:1.23.7-rootless",
+    "image_digest": "sha256:e71bf5c6b9851238d8df9047a2056b40a1a1e87a0bff62bb82935d59d3d37b23",
+    "maintainer": "official"
+  },
+
+  "arch": ["amd64", "arm64"],
+
+  "services": [
+    {
+      "name": "app",
+      "image": "gitea/gitea:1.23.7-rootless",
+      "env": {
+        "GITEA__security__INSTALL_LOCK": "true"
+      },
+      "volumes": [
+        {
+          "name": "data",
+          "path": "/var/lib/gitea",
+          "role": "state",
+          "init_chown": "1000:1000",
+          "backup": { "driver": "filesystem" }
+        },
+        {
+          "name": "config",
+          "path": "/etc/gitea",
+          "role": "state",
+          "init_chown": "1000:1000",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 3000, "public": true },
+        { "name": "ssh",  "container": 2222 }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/api/v1/version" },
+        "start_period_seconds": 30
+      }
+    }
+  ],
+
+  "display": {
+    "icon": "icons/gitea.svg",
+    "category": "dev-tools",
+    "long_description": "Gitea is a self-hosted Git service like a small forge — issues, pull requests, releases, a wiki, and CI-ready webhooks, in a single Go binary. The rootless image runs as a non-root user; grove init_chown's both data + config volume roots to 1000:1000 on first install so the container can write to fresh empty mounts."
+  },
+
+  "requirements": {
+    "min_ram_mb": 256
+  },
+
+  "setup": {
+    "url_path": "/user/sign_up"
+  }
+}

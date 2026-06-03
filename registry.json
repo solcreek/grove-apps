@@ -2,6 +2,7 @@
   "schema_version": "0.3",
   "apps": [
     "dani-garcia/vaultwarden",
+    "go-gitea/gitea",
     "louislam/uptime-kuma",
     "nextcloud/server",
     "nexu-io/open-design",
@@ -14,6 +15,7 @@
   ],
   "aliases": {
     "ghost": "tryghost/ghost",
+    "gitea": "go-gitea/gitea",
     "linkding": "sissbruecker/linkding",
     "memos": "usememos/memos",
     "nextcloud": "nextcloud/server",
