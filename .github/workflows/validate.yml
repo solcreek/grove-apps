@@ -80,31 +80,107 @@ jobs:
         run: |
           set -euo pipefail
           mf="apps/${{ matrix.slug }}/manifest.json"
-          image=$(jq -r .image "$mf")
-          port=$(jq -r '.ports[0].container' "$mf")
-          health=$(jq -r '.health_check // "/"' "$mf")
-          # Manifest env vars must be passed — many apps (vaultwarden,
-          # ghost, plausible) refuse to start without their declared
-          # config. Flatten to a string of "-e K=V" args for docker run.
-          env_flags=$(jq -r '.env // {} | to_entries | map("-e \(.key)=\(.value|@sh)") | join(" ")' "$mf")
-          # smoke_test.extra_env are env vars applied ONLY during this
-          # automated smoke run (not during grove install). Used by
-          # apps with boot-time safety checks that grove's real install
-          # satisfies via mounted volumes / managed state — e.g.
-          # vaultwarden's "no persistent volume" guard.
-          smoke_env=$(jq -r '.smoke_test.extra_env // {} | to_entries | map("-e \(.key)=\(.value|@sh)") | join(" ")' "$mf")
-          # Secrets get random placeholders — base64 of 32 bytes (44
-          # chars) because that satisfies the two common shapes apps
-          # check: minimum-length string (Plausible SECRET_KEY_BASE)
-          # AND Base64-encoded N bytes (Plausible TOTP_VAULT_KEY).
-          # Hex used to suffice but tripped the latter; base64 covers
-          # both with one format.
-          secret_flags=""
+
+          # Multi-service apps (Plausible-style: postgres + clickhouse +
+          # app) need depends_on orchestration this single-`docker run`
+          # smoke can't do. They opt out via smoke_test.skip; the run
+          # surfaces "skipped" so a left-out app stays visible.
+          if [ "$(jq -r '.smoke_test.skip // false' "$mf")" = "true" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+          # Dispatch by schema_version. v0.2 had top-level
+          # image/env/ports/health_check; v0.3 nested them under
+          # services[] and added ${secret.X} / ${grove.public_url}
+          # interpolation in env values. The smoke can only run one
+          # container, so v0.3 picks the PRIMARY service (the one
+          # with a port marked public:true — grove's PrimaryService
+          # logic in Go).
+          schema_ver=$(jq -r '.schema_version // "0.1"' "$mf")
+          case "$schema_ver" in
+            0.3*)
+              primary=$(jq -c 'first(.services[] | select(.ports[]?.public == true))' "$mf")
+              if [ -z "$primary" ] || [ "$primary" = "null" ]; then
+                echo "::error::v0.3 manifest has no service with public:true port"
+                exit 1
+              fi
+              image=$(echo "$primary" | jq -r .image)
+              port=$(echo "$primary" | jq -r 'first(.ports[] | select(.public == true) | .container)')
+              # v0.3 structured health probe. type=http → use path;
+              # type=cmd → harder to translate to an HTTP probe so
+              # fall back to / and let the curl polling decide.
+              health=$(echo "$primary" | jq -r 'if .health.type == "http" then .health.http.path else "/" end // "/"')
+              raw_env=$(echo "$primary" | jq -c '.env // {}')
+              ;;
+            *)
+              # v0.2 path — kept for backward compat with any fork
+              # that hasn't migrated to v0.3 yet. The official catalog
+              # has migrated everything; this branch is a safety net.
+              image=$(jq -r .image "$mf")
+              port=$(jq -r '.ports[0].container' "$mf")
+              health=$(jq -r '.health_check // "/"' "$mf")
+              raw_env=$(jq -c '.env // {}' "$mf")
+              ;;
+          esac
+
+          # Generate per-secret random values. base64 of 32 bytes
+          # (44 chars) satisfies both common shapes apps check:
+          # minimum-length string AND Base64-encoded N bytes.
+          # Persisted in a temp file so the env-substitution step
+          # below sees the same values.
+          : > /tmp/secrets.env
           while IFS= read -r name; do
             [ -z "$name" ] && continue
             val=$(openssl rand -base64 32)
-            secret_flags="$secret_flags -e ${name}=${val}"
+            echo "${name}=${val}" >> /tmp/secrets.env
           done < <(jq -r '.secrets // [] | .[].name' "$mf")
+
+          # Build env flags from the (possibly v0.3) env block.
+          # v0.3 env values may contain ${secret.NAME} and
+          # ${grove.public_url} interpolation; substitute both here
+          # before passing to docker run. ${grove.public_url}
+          # resolves to the same http://localhost:<port> grove uses
+          # at install time. Other ${X.Y} forms (${user.X},
+          # ${grove.old_public_url}) are unsupported in smoke and
+          # pass through as literals (broken-by-design; if a
+          # manifest needs user_inputs, it should set smoke_test.skip).
+          env_flags=""
+          while IFS=$'\t' read -r k v; do
+            # Substitute ${secret.NAME}
+            while IFS='=' read -r sname sval; do
+              [ -z "$sname" ] && continue
+              v="${v//\$\{secret.$sname\}/$sval}"
+            done < /tmp/secrets.env
+            # Substitute ${grove.public_url}
+            v="${v//\$\{grove.public_url\}/http://localhost:$port}"
+            # Each value must be single-shell-quoted because env
+            # values commonly contain spaces, '@', '/', '$' from
+            # connection strings and the like.
+            esc=${v//\'/\'\\\'\'}
+            env_flags="$env_flags -e ${k}='${esc}'"
+          done < <(echo "$raw_env" | jq -r 'to_entries[] | "\(.key)\t\(.value)"')
+
+          # Auto-inject secret values as plain env vars too. v0.2
+          # apps relied on grove doing this implicitly (no
+          # interpolation syntax existed); v0.3 apps use explicit
+          # ${secret.X} but some treat the secret name + env var
+          # name as the same string (e.g. linkding's
+          # LD_SUPERUSER_PASSWORD secret IS the env var) and
+          # would otherwise fail to receive a value.
+          secret_flags=""
+          while IFS='=' read -r sname sval; do
+            [ -z "$sname" ] && continue
+            secret_flags="$secret_flags -e ${sname}='${sval}'"
+          done < /tmp/secrets.env
+
+          # smoke_test.extra_env applies ONLY during this automated
+          # run, not at grove install. Used by apps with boot-time
+          # safety checks grove satisfies via real volumes (e.g.
+          # vaultwarden's I_REALLY_WANT_VOLATILE_STORAGE guard).
+          smoke_env=$(jq -r '.smoke_test.extra_env // {} | to_entries | map("-e \(.key)=\(.value|@sh)") | join(" ")' "$mf")
+
           {
             echo "image=$image"
             echo "port=$port"
@@ -114,10 +190,16 @@ jobs:
             echo "secret_flags=$secret_flags"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Skipped (smoke_test.skip true — e.g. multi-service)
+        if: steps.cfg.outputs.skip == 'true'
+        run: echo "::notice::${{ matrix.slug }} opted out of Layer 3 via smoke_test.skip — usually multi-service / external-dep apps"
+
       - name: docker pull
+        if: steps.cfg.outputs.skip != 'true'
         run: docker pull "${{ steps.cfg.outputs.image }}"
 
       - name: Run container + probe
+        if: steps.cfg.outputs.skip != 'true'
         # --network host so the container's port appears directly on
         # the runner's loopback — same shape as grove's --net=host
         # invocation in the dew VM. Health check accepts any 2xx or

@@ -128,5 +128,9 @@
 
   "setup": {
     "url_path": "/register"
+  },
+
+  "smoke_test": {
+    "skip": true
   }
 }
