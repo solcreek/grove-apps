@@ -1,8 +1,7 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "slug": "dani-garcia/vaultwarden",
   "name": "Vaultwarden",
-  "kind": "image",
   "version": "1.32.7",
   "description": "Lightweight Bitwarden-compatible password manager",
   "upstream": "https://github.com/dani-garcia/vaultwarden",
@@ -12,47 +11,57 @@
     "security",
     "bitwarden-compatible"
   ],
+
   "source": {
     "type": "upstream",
     "image": "vaultwarden/server:1.32.7",
+    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "maintainer": "official"
   },
-  "image": "vaultwarden/server:1.32.7",
-  "image_digest": "",
-  "arch": [
-    "amd64",
-    "arm64"
-  ],
-  "ports": [
+
+  "arch": ["amd64", "arm64"],
+
+  "services": [
     {
-      "name": "http",
-      "container": 80,
-      "protocol": "tcp"
+      "name": "app",
+      "image": "vaultwarden/server:1.32.7",
+      "env": {
+        "WEBSOCKET_ENABLED": "true"
+      },
+      "volumes": [
+        {
+          "name": "data",
+          "path": "/data",
+          "role": "state",
+          "init_chown": "65534:65534",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 80, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/alive" },
+        "start_period_seconds": 20
+      }
     }
   ],
-  "volumes": [
-    {
-      "name": "data",
-      "path": "/data",
-      "persistent": true
-    }
-  ],
-  "env": {
-    "WEBSOCKET_ENABLED": "true"
-  },
-  "health_check": "/alive",
-  "update_policy": "manual",
+
   "display": {
     "icon": "icons/vaultwarden.svg",
     "category": "security",
     "long_description": "A Bitwarden-compatible server in Rust. All official Bitwarden clients work against it. Comfortable on a Raspberry Pi."
   },
+
   "requirements": {
     "min_ram_mb": 128
   },
+
   "setup": {
     "url_path": "/admin"
   },
+
   "smoke_test": {
     "extra_env": {
       "I_REALLY_WANT_VOLATILE_STORAGE": "true"

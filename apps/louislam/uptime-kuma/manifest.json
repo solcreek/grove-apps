@@ -1,8 +1,7 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "slug": "louislam/uptime-kuma",
   "name": "Uptime Kuma",
-  "kind": "image",
   "version": "2.4.0",
   "description": "Self-hosted uptime / availability monitor",
   "upstream": "https://github.com/louislam/uptime-kuma",
@@ -12,41 +11,49 @@
     "uptime",
     "status-page"
   ],
+
   "source": {
     "type": "upstream",
     "image": "louislam/uptime-kuma:2.4.0",
+    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "maintainer": "official"
   },
-  "image": "louislam/uptime-kuma:2.4.0",
-  "image_digest": "",
-  "arch": [
-    "amd64",
-    "arm64"
-  ],
-  "ports": [
+
+  "arch": ["amd64", "arm64"],
+
+  "services": [
     {
-      "name": "http",
-      "container": 3001,
-      "protocol": "tcp"
+      "name": "app",
+      "image": "louislam/uptime-kuma:2.4.0",
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "volumes": [
+        {
+          "name": "data",
+          "path": "/app/data",
+          "role": "state",
+          "init_chown": "1000:1000",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 3001, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/" },
+        "start_period_seconds": 30
+      }
     }
   ],
-  "volumes": [
-    {
-      "name": "data",
-      "path": "/app/data",
-      "persistent": true
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "health_check": "/",
-  "update_policy": "manual",
+
   "display": {
     "icon": "icons/uptime-kuma.svg",
     "category": "monitoring",
     "long_description": "A self-hosted alternative to Uptime Robot. Monitors HTTP, TCP, Docker containers, and DNS with a polished UI and rich notification integrations."
   },
+
   "requirements": {
     "min_ram_mb": 256
   }

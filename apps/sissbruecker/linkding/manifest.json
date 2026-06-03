@@ -1,8 +1,7 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "slug": "sissbruecker/linkding",
   "name": "Linkding",
-  "kind": "image",
   "version": "1.36.0",
   "description": "Minimal, fast bookmark manager with tags and full-text search",
   "upstream": "https://github.com/sissbruecker/linkding",
@@ -13,50 +12,63 @@
     "pocket-alternative",
     "raindrop-alternative"
   ],
+
   "source": {
     "type": "upstream",
     "image": "sissbruecker/linkding:1.36.0",
+    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "maintainer": "official"
   },
-  "image": "sissbruecker/linkding:1.36.0",
-  "image_digest": "",
-  "arch": [
-    "amd64",
-    "arm64"
-  ],
-  "ports": [
-    {
-      "name": "http",
-      "container": 9090,
-      "protocol": "tcp"
-    }
-  ],
-  "volumes": [
-    {
-      "name": "data",
-      "path": "/etc/linkding/data",
-      "persistent": true
-    }
-  ],
-  "env": {
-    "LD_SUPERUSER_NAME": "admin"
-  },
+
+  "arch": ["amd64", "arm64"],
+
   "secrets": [
     {
       "name": "LD_SUPERUSER_PASSWORD",
-      "generate": "random:32"
+      "generate": "random:32",
+      "format": "alphanumeric",
+      "fork_policy": "preserve"
     }
   ],
-  "health_check": "/health",
-  "update_policy": "manual",
+
+  "services": [
+    {
+      "name": "app",
+      "image": "sissbruecker/linkding:1.36.0",
+      "env": {
+        "LD_SUPERUSER_NAME": "admin",
+        "LD_SUPERUSER_PASSWORD": "${secret.LD_SUPERUSER_PASSWORD}"
+      },
+      "volumes": [
+        {
+          "name": "data",
+          "path": "/etc/linkding/data",
+          "role": "state",
+          "init_chown": "33:33",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 9090, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/health" },
+        "start_period_seconds": 20
+      }
+    }
+  ],
+
   "display": {
     "icon": "icons/linkding.svg",
     "category": "knowledge",
-    "long_description": "Linkding is a lightweight bookmark manager with tags, full-text search, and a clean web UI. Replaces SaaS read-later apps like Pocket and Raindrop. Single-container, SQLite backed \u2014 boots in under a second."
+    "long_description": "Linkding is a lightweight bookmark manager with tags, full-text search, and a clean web UI. Replaces SaaS read-later apps like Pocket and Raindrop. Single-container, SQLite backed — boots in under a second."
   },
+
   "requirements": {
     "min_ram_mb": 64
   },
+
   "setup": {
     "url_path": "/login/"
   }

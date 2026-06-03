@@ -1,10 +1,9 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "slug": "nextcloud/server",
   "name": "Nextcloud",
-  "kind": "image",
   "version": "30",
-  "description": "Self-hosted productivity platform \u2014 files, calendar, contacts, more",
+  "description": "Self-hosted productivity platform — files, calendar, contacts, more",
   "upstream": "https://github.com/nextcloud/server",
   "license": "AGPL-3.0",
   "tags": [
@@ -14,50 +13,85 @@
     "google-drive-alternative",
     "dropbox-alternative"
   ],
+
   "source": {
     "type": "upstream",
     "image": "nextcloud:30-apache",
+    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "maintainer": "official"
   },
-  "image": "nextcloud:30-apache",
-  "image_digest": "",
-  "arch": [
-    "amd64",
-    "arm64"
-  ],
-  "ports": [
+
+  "arch": ["amd64", "arm64"],
+
+  "user_inputs": [
     {
-      "name": "http",
-      "container": 80,
-      "protocol": "tcp"
+      "name": "TRUSTED_DOMAIN",
+      "label": "Trusted domain",
+      "description": "Hostname Nextcloud will accept requests for. Use 'localhost' for local; on cloud Deploy this is overwritten by the post_restore hook.",
+      "type": "string",
+      "required": true,
+      "default": "localhost"
     }
   ],
-  "volumes": [
-    {
-      "name": "data",
-      "path": "/var/www/html/data",
-      "persistent": true
-    },
+
+  "services": [
     {
       "name": "app",
-      "path": "/var/www/html",
-      "persistent": true
+      "image": "nextcloud:30-apache",
+      "env": {
+        "SQLITE_DATABASE": "nextcloud",
+        "NEXTCLOUD_TRUSTED_DOMAINS": "${user.TRUSTED_DOMAIN}"
+      },
+      "volumes": [
+        {
+          "name": "data",
+          "path": "/var/www/html/data",
+          "role": "state",
+          "init_chown": "33:33",
+          "backup": { "driver": "filesystem" }
+        },
+        {
+          "name": "app_files",
+          "path": "/var/www/html",
+          "role": "state",
+          "init_chown": "33:33",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 80, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/status.php" },
+        "start_period_seconds": 120
+      },
+      "stop_timeout_seconds": 30,
+      "hooks": {
+        "post_restore": [
+          {
+            "cmd": [
+              "sh",
+              "-c",
+              "su -s /bin/sh www-data -c \"php occ config:system:set trusted_domains 0 --value=$(echo '${grove.public_url}' | sed -e 's|^https\\?://||' -e 's|/.*||') && php occ config:system:set overwrite.cli.url --value=${grove.public_url}\""
+            ],
+            "timeout_seconds": 300
+          }
+        ]
+      }
     }
   ],
-  "env": {
-    "SQLITE_DATABASE": "nextcloud",
-    "NEXTCLOUD_TRUSTED_DOMAINS": "localhost"
-  },
-  "health_check": "/status.php",
-  "update_policy": "manual",
+
   "display": {
     "icon": "icons/nextcloud.svg",
     "category": "productivity",
-    "long_description": "Nextcloud is a self-hosted productivity platform: file sync and share, calendar, contacts, video calls, collaborative documents \u2014 the open-source replacement for Google Workspace / Microsoft 365. Demo-friendly with the bundled SQLite backend; production deployments typically swap in PostgreSQL."
+    "long_description": "Nextcloud is a self-hosted productivity platform: file sync and share, calendar, contacts, video calls, collaborative documents — the open-source replacement for cloud office suites. Demo-friendly with the bundled SQLite backend; production deployments typically swap in PostgreSQL."
   },
+
   "requirements": {
     "min_ram_mb": 512
   },
+
   "setup": {
     "url_path": "/"
   }

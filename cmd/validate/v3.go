@@ -9,7 +9,15 @@ import (
 	"strings"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
+
+// schemaErrPrinter is the message.Printer that jsonschema's
+// ErrorKind.LocalizedString needs to format some error kinds
+// (Pattern is one — it requires a non-nil printer to produce
+// "does not match pattern X"). nil panics; English is fine.
+var schemaErrPrinter = message.NewPrinter(language.English)
 
 // v0.3 manifests are validated structurally against the canonical
 // JSON Schema in schema/manifest.v0.3.schema.json (single source of
@@ -170,7 +178,7 @@ func flattenJSONSchemaErrors(root *jsonschema.ValidationError) []jsonSchemaErr {
 			if field == "" {
 				field = "(root)"
 			}
-			out = append(out, jsonSchemaErr{field: field, msg: e.ErrorKind.LocalizedString(nil)})
+			out = append(out, jsonSchemaErr{field: field, msg: e.ErrorKind.LocalizedString(schemaErrPrinter)})
 			return
 		}
 		for _, c := range e.Causes {

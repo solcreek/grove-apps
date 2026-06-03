@@ -57,9 +57,9 @@
     },
     "tags": {
       "type": "array",
-      "items": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "items": { "type": "string", "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" },
       "minItems": 1,
-      "description": "Search / category tags. Lowercase, kebab-case."
+      "description": "Search / category tags. Lowercase. Internal characters may include '-' and '.' (e.g. 'next.js', 'pocket-alternative'); must start and end with alphanumeric. Single characters are allowed."
     },
     "source": {
       "$ref": "#/$defs/source",
@@ -539,10 +539,11 @@
         "icon": { "type": "string", "description": "Relative path under apps/<slug>/." },
         "category": {
           "enum": [
-            "analytics", "communication", "creative", "developer-tools",
-            "media", "networking", "productivity", "security",
-            "storage", "utility"
-          ]
+            "analytics", "communication", "creative", "dev-tools",
+            "knowledge", "media", "monitoring", "networking",
+            "productivity", "security", "storage", "utility"
+          ],
+          "description": "Browseable category in the grove UI. Keep this enum tight — open vocabulary degrades catalog search by app #50 (per OSS catalog patterns)."
         },
         "long_description": { "type": "string", "maxLength": 2000 },
         "screenshots": {

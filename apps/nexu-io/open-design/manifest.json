@@ -1,8 +1,7 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "slug": "nexu-io/open-design",
   "name": "Open Design",
-  "kind": "image",
   "version": "0.9.0",
   "description": "Local-first design tool with sandboxed previews and 142+ design systems",
   "upstream": "https://github.com/nexu-io/open-design",
@@ -13,6 +12,7 @@
     "ai",
     "next.js"
   ],
+
   "source": {
     "type": "build",
     "image": "ghcr.io/solcreek/grove-apps/nexu-io/open-design:0.9.0",
@@ -23,39 +23,46 @@
     "built_at": "2026-06-02T17:35:00Z",
     "built_digest": "sha256:47b0e6edb677634805e3baaff54ce34fba6c7b773f5d8aaa81a6ec763571239a"
   },
-  "image": "ghcr.io/solcreek/grove-apps/nexu-io/open-design:0.9.0",
-  "image_digest": "sha256:47b0e6edb677634805e3baaff54ce34fba6c7b773f5d8aaa81a6ec763571239a",
-  "arch": [
-    "amd64",
-    "arm64"
-  ],
-  "ports": [
+
+  "arch": ["amd64", "arm64"],
+
+  "services": [
     {
-      "name": "http",
-      "container": 3000,
-      "protocol": "tcp"
+      "name": "app",
+      "image": "ghcr.io/solcreek/grove-apps/nexu-io/open-design:0.9.0",
+      "image_digest": "sha256:47b0e6edb677634805e3baaff54ce34fba6c7b773f5d8aaa81a6ec763571239a",
+      "env": {
+        "OD_PORT": "7456",
+        "PORT": "3000",
+        "HOSTNAME": "0.0.0.0",
+        "OD_WORKSPACE_ROOT": "/app/workspace"
+      },
+      "volumes": [
+        {
+          "name": "workspace",
+          "path": "/app/workspace",
+          "role": "state",
+          "init_chown": "1000:1000",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 3000, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/" },
+        "start_period_seconds": 30
+      }
     }
   ],
-  "volumes": [
-    {
-      "name": "workspace",
-      "path": "/app/workspace",
-      "persistent": true
-    }
-  ],
-  "env": {
-    "OD_PORT": "7456",
-    "PORT": "3000",
-    "HOSTNAME": "0.0.0.0",
-    "OD_WORKSPACE_ROOT": "/app/workspace"
-  },
-  "health_check": "/",
-  "update_policy": "manual",
+
   "display": {
     "icon": "icons/open-design.svg",
     "category": "creative",
-    "long_description": "Open Design is a local-first, open-source design tool. It bundles a Next.js web UI with a Node daemon that owns artifacts, sandboxed previews, and integrations with 17+ AI coding CLIs (Claude Code, Cursor, OpenClaw, etc.). Grove builds the web SSR + daemon together into one container so the share-fast workflow stays one click."
+    "long_description": "Open Design is a local-first, open-source design tool. It bundles a Next.js web UI with a Node daemon that owns artifacts, sandboxed previews, and integrations with 17+ AI coding CLIs. Grove builds the web SSR + daemon together into one container so the share-fast workflow stays one click."
   },
+
   "requirements": {
     "min_ram_mb": 1024
   }

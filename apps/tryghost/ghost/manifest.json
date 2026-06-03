@@ -1,8 +1,7 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "slug": "tryghost/ghost",
   "name": "Ghost",
-  "kind": "image",
   "version": "5.114.1",
   "description": "Professional publishing platform",
   "upstream": "https://github.com/TryGhost/Ghost",
@@ -12,47 +11,69 @@
     "cms",
     "publishing"
   ],
+
   "source": {
     "type": "upstream",
     "image": "ghost:5-alpine",
+    "image_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "maintainer": "official"
   },
-  "image": "ghost:5-alpine",
-  "image_digest": "",
-  "arch": [
-    "amd64",
-    "arm64"
-  ],
-  "ports": [
+
+  "arch": ["amd64", "arm64"],
+
+  "services": [
     {
-      "name": "http",
-      "container": 2368,
-      "protocol": "tcp"
+      "name": "app",
+      "image": "ghost:5-alpine",
+      "env": {
+        "NODE_ENV": "production",
+        "database__client": "sqlite3",
+        "database__connection__filename": "/var/lib/ghost/content/data/ghost.db",
+        "url": "${grove.public_url}"
+      },
+      "volumes": [
+        {
+          "name": "content",
+          "path": "/var/lib/ghost/content",
+          "role": "state",
+          "init_chown": "1000:1000",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 2368, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/ghost/api/admin/site/" },
+        "start_period_seconds": 60
+      },
+      "stop_timeout_seconds": 30,
+      "hooks": {
+        "post_restore": [
+          {
+            "cmd": [
+              "sh",
+              "-c",
+              "sqlite3 /var/lib/ghost/content/data/ghost.db \"UPDATE posts SET html=REPLACE(html, '${grove.old_public_url}', '${grove.public_url}'), mobiledoc=REPLACE(mobiledoc, '${grove.old_public_url}', '${grove.public_url}'); UPDATE settings SET value=REPLACE(value, '${grove.old_public_url}', '${grove.public_url}');\""
+            ],
+            "timeout_seconds": 300
+          }
+        ]
+      }
     }
   ],
-  "volumes": [
-    {
-      "name": "content",
-      "path": "/var/lib/ghost/content",
-      "persistent": true
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "database__client": "sqlite3",
-    "url": "http://localhost:2368",
-    "database__connection__filename": "/var/lib/ghost/content/data/ghost.db"
-  },
-  "health_check": "/ghost/api/admin/site/",
-  "update_policy": "manual",
+
   "display": {
     "icon": "icons/ghost.svg",
     "category": "productivity",
     "long_description": "Ghost is a publishing platform for modern journalism — fast, SEO-optimised, and built for serious writers, newsletters, and membership sites."
   },
+
   "requirements": {
     "min_ram_mb": 512
   },
+
   "setup": {
     "url_path": "/ghost"
   }

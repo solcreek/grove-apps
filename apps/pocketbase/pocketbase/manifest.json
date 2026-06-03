@@ -1,8 +1,7 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "slug": "pocketbase/pocketbase",
   "name": "PocketBase",
-  "kind": "image",
   "version": "0.39.0",
   "description": "Open source backend with realtime database, auth, and file storage",
   "upstream": "https://github.com/pocketbase/pocketbase",
@@ -13,6 +12,7 @@
     "baas",
     "firebase-alternative"
   ],
+
   "source": {
     "type": "build",
     "image": "ghcr.io/solcreek/grove-apps/pocketbase/pocketbase:0.39.0",
@@ -23,36 +23,44 @@
     "built_at": "2026-06-02T14:18:00Z",
     "built_digest": "sha256:a84d8f69b66d56c02046eb01c7ad4e3e1d2043893b6b0f57f37650098cb30200"
   },
-  "image": "ghcr.io/solcreek/grove-apps/pocketbase/pocketbase:0.39.0",
-  "image_digest": "sha256:a84d8f69b66d56c02046eb01c7ad4e3e1d2043893b6b0f57f37650098cb30200",
-  "arch": [
-    "amd64",
-    "arm64"
-  ],
-  "ports": [
+
+  "arch": ["amd64", "arm64"],
+
+  "services": [
     {
-      "name": "http",
-      "container": 8090,
-      "protocol": "tcp"
+      "name": "app",
+      "image": "ghcr.io/solcreek/grove-apps/pocketbase/pocketbase:0.39.0",
+      "image_digest": "sha256:a84d8f69b66d56c02046eb01c7ad4e3e1d2043893b6b0f57f37650098cb30200",
+      "volumes": [
+        {
+          "name": "data",
+          "path": "/pb",
+          "role": "state",
+          "init_chown": "1000:1000",
+          "backup": { "driver": "filesystem" }
+        }
+      ],
+      "ports": [
+        { "name": "http", "container": 8090, "public": true }
+      ],
+      "health": {
+        "type": "http",
+        "http": { "path": "/api/health" },
+        "start_period_seconds": 10
+      }
     }
   ],
-  "volumes": [
-    {
-      "name": "data",
-      "path": "/pb",
-      "persistent": true
-    }
-  ],
-  "health_check": "/api/health",
-  "update_policy": "manual",
+
   "display": {
     "icon": "icons/pocketbase.svg",
     "category": "dev-tools",
     "long_description": "PocketBase is an open source backend in a single binary: realtime database, authentication, file storage, and admin dashboard."
   },
+
   "requirements": {
     "min_ram_mb": 64
   },
+
   "setup": {
     "url_path": "/_/"
   }
